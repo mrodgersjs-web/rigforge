@@ -458,12 +458,13 @@ class TestResumeCLI:
 
 
 class TestGapsClosed:
-    def test_only_g004_remains(self):
+    def test_g004_resolved_no_open_gaps(self):
         from rigforge.gaps import GAPS, RESOLVED_GAPS
 
         open_ids = {g.id for g in GAPS}
         resolved_ids = {g.id for g in RESOLVED_GAPS}
-        assert open_ids == {"G004"}
+        assert open_ids == set()
+        assert "G004" in resolved_ids
         assert {"G001", "G002", "G003", "G005", "G006", "G007", "G008"} <= resolved_ids
 
     def test_cli_gaps_all_flag(self):

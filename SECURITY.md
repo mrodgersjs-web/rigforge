@@ -1,5 +1,20 @@
 # Security
 
+## Short public path — what you need to know in 30 seconds
+
+RIGForge seals work with HMAC-SHA256 — a symmetric signature. **The guarantee is
+one-directional: you can prove to yourself that a proof hasn't been tampered with,
+but you cannot prove that to a third party without handing them the key.** If you
+need public verifiability, compose with Sigstore or in-toto (see below). If you
+just need internal integrity — "did my CI seal this, and has anyone changed it
+since?" — RIGForge is the right layer.
+
+**For the full trust boundaries** — including what RIGForge deliberately does *not*
+defend against (compromised key, agent that never seals, malicious-but-passing
+code, weak gates) — see [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
+
+---
+
 ## The limitation you need to know first
 
 **RIGForge's seal is symmetric. A third party cannot verify your ProofPacket.**

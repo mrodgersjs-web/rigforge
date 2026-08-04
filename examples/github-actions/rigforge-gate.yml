@@ -1,0 +1,195 @@
+# RIGForge Merge Gate — example workflow
+#
+# This workflow runs RIGForge quality gates on every pull request targeting
+# main.  It demonstrates how the composite action at
+# .github/actions/rigforge-gate acts as a merge gate: no PR merges until the
+# requested phases pass their hard-block gates and (optionally) a ProofPacket
+# is sealed.
+#
+# Copy this file to .github/workflows/rigforge-gate.yml in your project to
+# enable the merge gate.  Adjust the phases list to match your project's
+# maturity — a new project might only gate on phases 1–3, while a mature
+# project gates on all 7.
+#
+# ─── Design rationale ───────────────────────────────────────────────────
+#
+# 1. **Single job, matrix phases.**  Each phase runs as a separate step
+#    inside one job.  This avoids the overhead of N jobs (each paying for
+#    runner spin-up + pip install) while still producing per-phase pass/fail
+#    signals.
+#
+# 2. **Fail-fast on hard blocks.**  The composite action exits non-zero when
+#    a hard-block gate fails, which stops the job.  Soft-block and advisory
+#    gates are always visible in the step summary but never block the merge.
+#
+# 3. **Optional sealing.**  Sealing writes a tamper-evident ProofPacket.  For
+#    PR gates, you typically want to *run* the gates but *seal* only on merge
+#    to main (see the separate `seal-on-merge` workflow below).  Set
+#    `seal: false` on PRs to avoid polluting the proofs directory with
+#    unmerged work.
+#
+# 4. **Spec-bound gating.**  If you have acceptance criteria in a spec file,
+#    pass `spec: path/to/spec.yml` and the sealed packet carries signed
+#    criteria.  Downstream verification (`rigforge spec-check`) can confirm
+#    the sealed work satisfies the exact spec.
+# ────────────────────────────────────────────────────────────────────────
+
+name: RIGForge Merge Gate
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write   # needed for PR status annotations
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rigforge-gate:
+    name: "rigforge gate (phase ${{ matrix.phase }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Phases to enforce as merge gates.  Start with the early phases
+        # that validate project structure; add later phases as your project
+        # matures.
+        phase: [1, 2, 3, 4, 5, 6, 7]
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # ── Run gates for this phase ────────────────────────────────────
+      - name: "RIGForge gate — phase ${{ matrix.phase }}"
+        id: gate
+        uses: ./.github/actions/rigforge-gate
+        with:
+          phase: ${{ matrix.phase }}
+          seal: false             # don't seal on PRs — only on merge
+          strict: false           # strict verify runs in a separate job
+          python-version: "3.13"
+
+      # ── Annotate the PR with gate results ───────────────────────────
+      - name: Annotate PR
+        if: always()
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const phase = '${{ matrix.phase }}';
+            const ok = '${{ steps.gate.outputs.ok }}';
+            const passed = '${{ steps.gate.outputs.passed-count }}';
+            const failed = '${{ steps.gate.outputs.failed-count }}';
+            const total = '${{ steps.gate.outputs.gate-count }}';
+            const icon = ok === 'true' ? '✅' : '❌';
+
+            const body = [
+              `### ${icon} RIGForge Phase ${phase} Gate`,
+              '',
+              `| Metric | Value |`,
+              `| --- | --- |`,
+              `| Gates executed | ${total} |`,
+              `| Passed | ${passed} |`,
+              `| Failed | ${failed} |`,
+              `| **ok** | **${ok}** |`,
+              '',
+              '<details><summary>Gate details</summary>',
+              '',
+              '${{ steps.gate.outputs.gate-summary }}',
+              '',
+              '</details>',
+            ].join('\n');
+
+            // Find existing comment to update (avoid duplicate comments)
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const marker = `### ${icon} RIGForge Phase ${phase} Gate`;
+            const existing = comments.find(c =>
+              c.body.includes(`RIGForge Phase ${phase} Gate`)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+  # ── Gate verdict ──────────────────────────────────────────────────────
+  # A single required status check that aggregates all phase results.
+  # Add `rigforge-gate / gate-verdict` as a required status check in
+  # Branch Protection Rules to enforce the merge gate.
+  gate-verdict:
+    name: gate-verdict
+    if: always()
+    needs: [rigforge-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate verdict
+        run: |
+          # If any matrix phase failed, this job fails — blocking the merge.
+          results=("${{ needs.rigforge-gate.result }}")
+          if [ "$results" = "failure" ] || [ "$results" = "cancelled" ]; then
+            echo "::error::One or more RIGForge phase gates failed.  See the individual phase jobs for details."
+            exit 1
+          fi
+          echo "All RIGForge phase gates passed."
+
+
+# ────────────────────────────────────────────────────────────────────────
+# SEPARATE WORKFLOW: Seal on merge
+# ────────────────────────────────────────────────────────────────────────
+# Copy this into a separate file (e.g. .github/workflows/rigforge-seal.yml)
+# to seal ProofPackets only when PRs are merged to main.  This keeps the
+# proofs directory clean — unmerged work never generates a seal.
+#
+# name: RIGForge Seal on Merge
+#
+# on:
+#   push:
+#     branches: [main]
+#
+# permissions:
+#   contents: write    # needed to write proofs/ and ledger/
+#
+# jobs:
+#   seal:
+#     name: "rigforge seal (phase ${{ matrix.phase }})"
+#     runs-on: ubuntu-latest
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         phase: [1, 2, 3, 4, 5, 6, 7]
+#     steps:
+#       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+#
+#       - name: Seal phase ${{ matrix.phase }}
+#         uses: ./.github/actions/rigforge-gate
+#         with:
+#           phase: ${{ matrix.phase }}
+#           seal: true
+#           strict: true         # enforce phase continuity on main
+#           evidence: "Sealed on merge to main — commit ${{ github.sha }}"
+#
+#       - name: Commit proof
+#         run: |
+#           git config user.name "rigforge[bot]"
+#           git config user.email "rigforge@rig.dev"
+#           git add proofs/ ledger/
+#           git diff --cached --quiet || git commit -m "rigforge: seal phase ${{ matrix.phase }} [skip ci]"
+#           git push

@@ -350,6 +350,57 @@ def trace(click_ctx: click.Context, phase: int, dry_run: bool):
         sys.exit(1)
 
 
+# ── keygen ──────────────────────────────────────────────────────────────
+
+
+@main.command("keygen")
+@click.option("--out-dir", "out_dir", type=click.Path(file_okay=False, path_type=Path),
+              default=None,
+              help="Directory to write keys into (default .rigforge). "
+                   "Creates signing-ed25519.key (private, mode 0o600) and "
+                   "signing-ed25519.pub (public hex).")
+@click.pass_context
+def keygen(click_ctx: click.Context, out_dir: Path | None):
+    """Generate an ed25519 keypair for public attestation (signing-ed25519.*)."""
+    ctx = _ctx(click_ctx)
+    out = out_dir or ctx.root / ".rigforge"
+    try:
+        from rigforge.public_attest import generate_keypair
+    except (ImportError, ModuleNotFoundError):
+        click.echo("❌ ed25519 keypair generation requires the 'cryptography' package. "
+                   "Install with:  pip install -e '.[public]'")
+        sys.exit(2)
+
+    private_bytes, public_hex = generate_keypair()
+    out.mkdir(parents=True, exist_ok=True)
+
+    key_file = out / "signing-ed25519.key"
+    pub_file = out / "signing-ed25519.pub"
+
+    key_file.write_bytes(private_bytes.hex().encode("utf-8"))
+    key_file.chmod(0o600)
+    pub_file.write_text(public_hex + "\n", encoding="utf-8")
+
+    _ensure_gitignore_entry(ctx.root, ".rigforge/")
+
+    payload = {
+        "ok": True,
+        "key_file": str(key_file),
+        "pub_file": str(pub_file),
+        "public_key": public_hex,
+    }
+    _emit(
+        click_ctx,
+        lambda: (
+            click.echo(f"🔑 Generated ed25519 keypair in {out}/"),
+            click.echo(f"   private key: {key_file.name} (mode 0o600)"),
+            click.echo(f"   public key:  {pub_file.name}"),
+            click.echo(f"   public hex:  {public_hex}"),
+        ),
+        payload,
+    )
+
+
 # ── seal ────────────────────────────────────────────────────────────────
 
 
@@ -366,10 +417,14 @@ def trace(click_ctx: click.Context, phase: int, dry_run: bool):
 @click.option("--spec", "spec_path", default=None, type=click.Path(exists=True),
               help="Bind a spec file: the proof carries (signed) its acceptance criteria, "
                    "checkable later with `rigforge spec-check`.")
+@click.option("--ed25519-key", "ed25519_key", default=None,
+              type=click.Path(exists=True),
+              help="Ed25519 private key file (hex or raw 32 bytes) for public "
+                   "attestation. Falls back to RIGFORGE_ED25519_PRIVATE_KEY_FILE.")
 @click.pass_context
 def seal(click_ctx: click.Context, phase: int, artifacts: tuple[Path, ...],
          evidence: str | None, verifier: str | None, force: bool, eval_loop: bool,
-         spec_path: str | None):
+         spec_path: str | None, ed25519_key: str | None):
     """Seal phase N: writes a ProofPacket with checksums + run envelope."""
     ctx = _ctx(click_ctx)
     harness = ArchonHarness(ctx)
@@ -430,6 +485,34 @@ def seal(click_ctx: click.Context, phase: int, artifacts: tuple[Path, ...],
         payload,
     )
 
+    # ── Ed25519 public attestation (optional) ──────────────────────────
+    ed25519_path = ed25519_key or os.environ.get("RIGFORGE_ED25519_PRIVATE_KEY_FILE")
+    if ed25519_path:
+        try:
+            from rigforge.public_attest import sign_packet
+        except (ImportError, ModuleNotFoundError):
+            click.echo(
+                "⚠️  ed25519 signing skipped: cryptography package not installed.\n"
+                "    Install with:  pip install -e '.[public]'"
+            )
+        else:
+            raw = Path(ed25519_path).read_bytes().strip()
+            try:
+                key_bytes = bytes.fromhex(raw)
+            except ValueError:
+                key_bytes = raw
+            if len(key_bytes) != 32:
+                click.echo(
+                    f"❌ Ed25519 private key must be 32 bytes "
+                    f"(got {len(key_bytes)} bytes).")
+                sys.exit(1)
+            packet = sign_packet(packet, key_bytes)
+            # Re-write the file with the public signature included.
+            proof_path.write_text(
+                json.dumps(packet.model_dump(mode="json"), indent=2))
+            click.echo(
+                f"   🔏 Ed25519 signature added (signer={packet.public_signer[:12]}…)")
+
 
 # ── verify ──────────────────────────────────────────────────────────────
 
@@ -439,8 +522,22 @@ def seal(click_ctx: click.Context, phase: int, artifacts: tuple[Path, ...],
               help="Require integrity hash + phase-order continuity (no gaps).")
 @click.option("--require-signature", is_flag=True, default=False,
               help="Also verify the HMAC signature on each proof packet (G006).")
+@click.option("--spec", "spec_path", default=None,
+              type=click.Path(exists=True),
+              help="Spec file for spec-bound verification.  For each sealed packet: "
+                   "if the packet has a spec binding, re-verify criteria against this "
+                   "spec and check the hash matches; if the packet has NO spec binding, "
+                   "fail (a spec-bound proof is required when --spec is given).")
+@click.option("--public-key", "public_key", default=None,
+              help="Ed25519 public key (file path or hex string) for signature "
+                   "verification.  Falls back to RIGFORGE_PUBLIC_KEY or "
+                   "RIGFORGE_PUBLIC_KEY_FILE.  Fail if set and signature is "
+                   "missing or does not verify.")
+@click.option("--require-public", is_flag=True, default=False,
+              help="Require a public (ed25519) signature on every sealed packet.")
 @click.pass_context
-def verify(click_ctx: click.Context, strict: bool, require_signature: bool):
+def verify(click_ctx: click.Context, strict: bool, require_signature: bool,
+           spec_path: str | None, public_key: str | None, require_public: bool):
     """Verify all sealed phases: schema, integrity hash, phase order, signature."""
     ctx = _ctx(click_ctx)
     from rigforge.config import load_config
@@ -454,6 +551,22 @@ def verify(click_ctx: click.Context, strict: bool, require_signature: bool):
         click.echo("❌ --require-signature was set but no signing key is configured "
                    "(set RIGFORGE_SIGNING_KEY or configure signing.key_file in rigforge.yaml).")
         sys.exit(2)
+
+    # ── Resolve public key for ed25519 verification ────────────────────
+    resolved_public_key: str | None = None
+    if public_key:
+        pk_path = Path(public_key)
+        if pk_path.is_file():
+            resolved_public_key = pk_path.read_text(encoding="utf-8").strip()
+        else:
+            resolved_public_key = public_key
+    else:
+        env_pk = os.environ.get("RIGFORGE_PUBLIC_KEY")
+        env_pk_file = os.environ.get("RIGFORGE_PUBLIC_KEY_FILE")
+        if env_pk:
+            resolved_public_key = env_pk
+        elif env_pk_file and Path(env_pk_file).is_file():
+            resolved_public_key = Path(env_pk_file).read_text(encoding="utf-8").strip()
 
     phase_reports: list[dict] = []
     sealed_phases: list[int] = []
@@ -475,7 +588,7 @@ def verify(click_ctx: click.Context, strict: bool, require_signature: bool):
         signature_ok: bool | None = None
         if signing_key is not None and packet.signature:
             signature_ok = packet.verify_signature(signing_key)
-        report = {
+        report: dict = {
             "phase": p,
             "name": name,
             "sealed": True,
@@ -492,6 +605,50 @@ def verify(click_ctx: click.Context, strict: bool, require_signature: bool):
                 errors.append(f"Phase {p}: proof packet is not signed.")
             elif signature_ok is False:
                 errors.append(f"Phase {p}: signature does not verify.")
+
+        # ── Spec-bound verification (move #2) ──────────────────────────
+        if spec_path:
+            from rigforge.spec import verify_spec
+
+            has_binding = packet.spec is not None
+            spec_match = verify_spec(packet, spec_file=Path(spec_path))
+            report["spec_ok"] = spec_match.ok
+            report["spec_missing"] = spec_match.missing
+            report["spec_hash_ok"] = spec_match.spec_hash_ok
+            if not has_binding:
+                errors.append(
+                    f"Phase {p}: --spec given but packet has no spec binding "
+                    f"(spec-bound proofs required)."
+                )
+            elif not spec_match.ok:
+                errors.append(
+                    f"Phase {p}: spec criteria not satisfied — "
+                    f"missing: {spec_match.missing}"
+                )
+            elif spec_match.spec_hash_ok is False:
+                errors.append(
+                    f"Phase {p}: spec file hash does not match sealed binding "
+                    f"(spec was swapped or modified)."
+                )
+
+        # ── Public (ed25519) signature verification ────────────────────
+        if resolved_public_key or require_public:
+            from rigforge.public_attest import verify_packet as _verify_packet
+
+            has_pub = bool(packet.public_signature)
+            pub_ok: bool | None = None
+            if has_pub:
+                pub_ok = _verify_packet(packet, public_key_hex=resolved_public_key)
+            report["public_signed"] = has_pub
+            report["public_signature_ok"] = pub_ok
+            if require_public and not has_pub:
+                errors.append(f"Phase {p}: no public (ed25519) signature on packet.")
+            elif resolved_public_key and has_pub and pub_ok is False:
+                errors.append(
+                    f"Phase {p}: public signature does not verify "
+                    f"against provided key."
+                )
+
         phase_reports.append(report)
 
     if strict and sealed_phases:
@@ -512,9 +669,14 @@ def verify(click_ctx: click.Context, strict: bool, require_signature: bool):
                 click.echo(f"  Phase {r['phase']}: ⚠️  {r['name']} — schema error: {r['error']}")
             else:
                 tag = "✅" if r["integrity_ok"] else "⚠️"
+                extras = ""
+                if r.get("spec_ok") is not None:
+                    extras += f" spec={'✅' if r['spec_ok'] else '❌'}"
+                if r.get("public_signed") is not None:
+                    extras += f" pubkey={'✅' if r.get('public_signature_ok') else '❌'}"
                 click.echo(
                     f"  Phase {r['phase']}: {tag} {r['name']} "
-                    f"(verifier={r['verifier']}, artifacts={r['artifact_count']})"
+                    f"(verifier={r['verifier']}, artifacts={r['artifact_count']}){extras}"
                 )
         click.echo()
         if ok:

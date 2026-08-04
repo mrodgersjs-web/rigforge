@@ -148,6 +148,23 @@ class ProofPacket(BaseModel):
         description="HMAC-SHA256 of packet_sha256 with the project signing key (G006).",
     )
     signature_algo: str = Field(default="hmac-sha256")
+    # ── Public attestation (ed25519) ─────────────────────────────────
+    # Asymmetric signing that anyone can verify without the private key.
+    # These fields are metadata only — excluded from the packet hash so
+    # signing never invalidates integrity.  Populated via
+    # ``rigforge.public_attest.sign_packet()``.
+    public_signer: str = Field(
+        default="",
+        description="Hex-encoded ed25519 public key of the signer.",
+    )
+    public_signature: str = Field(
+        default="",
+        description="Hex-encoded ed25519 signature over packet_sha256.",
+    )
+    public_signature_algo: str = Field(
+        default="",
+        description="Signature algorithm identifier (e.g. 'ed25519').",
+    )
 
     # ── Integrity ──────────────────────────────────────────────────────
 
@@ -156,6 +173,10 @@ class ProofPacket(BaseModel):
         data.pop("packet_sha256", None)
         data.pop("signature", None)
         data.pop("signature_algo", None)
+        # Public-attestation fields are metadata — never part of the hash.
+        data.pop("public_signer", None)
+        data.pop("public_signature", None)
+        data.pop("public_signature_algo", None)
         return json.dumps(data, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
     def compute_hash(self) -> str:

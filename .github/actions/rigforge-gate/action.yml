@@ -1,0 +1,399 @@
+# RIGForge Composite Gate Action
+# Runs deterministic quality gates for a RIGForge phase and optionally seals
+# the proof.  Designed to be reusable from any workflow via:
+#
+#   uses: ./.github/actions/rigforge-gate
+#     with:
+#       phase: 5
+#
+# The action installs RIGForge, runs the gate bundle for the requested phase,
+# and (unless `seal: false`) writes a tamper-evident ProofPacket on success.
+# Every output is machine-readable so downstream steps can gate on exact values.
+#
+# ─── Why a composite action? ───────────────────────────────────────────
+# A reusable workflow (workflow_call) cannot be *conditional* inside a caller
+# — you always pay the full job.  A composite action runs inside the caller's
+# job, sharing the runner, so you can pick which phases run without extra
+# jobs and the gate results land in the same step summary.
+# ────────────────────────────────────────────────────────────────────────
+
+name: "RIGForge Gate"
+description: >
+  Run RIGForge quality gates for a given phase.  Returns structured gate
+  results and optionally seals a ProofPacket.
+
+branding:
+  icon: "check-circle"
+  color: "green"
+
+# ── Inputs ──────────────────────────────────────────────────────────────
+
+inputs:
+  phase:
+    description: >
+      Phase number to run (1–7).  See RIGForge 7-phase model in
+      ARCHITECTURE.md §2.
+    required: true
+
+  seal:
+    description: >
+      Whether to seal a ProofPacket after all gates pass.  When true, the
+      phase proof is written to proofs/phase{N}_proof.json and appended to
+      the ledger.
+    required: false
+    default: "true"
+
+  force:
+    description: >
+      Seal even if blocking gates failed (records the failures in the
+      packet).  Use only for non-production evidence capture.
+    required: false
+    default: "false"
+
+  strict:
+    description: >
+      Verify with strict phase-order continuity (no gaps between sealed
+      phases).  Set to true for merge-gate enforcement.
+    required: false
+    default: "false"
+
+  spec:
+    description: >
+      Path to a spec file to bind into the ProofPacket.  When provided,
+      the seal carries (signed) acceptance criteria that can be re-checked
+      with `rigforge spec-check`.
+    required: false
+    default: ""
+
+  evidence:
+    description: >
+      Human-readable evidence summary to embed in the sealed packet.
+      For example: "All 252 tests pass on 3.13, ruff clean".
+    required: false
+    default: ""
+
+  python-version:
+    description: >
+      Python version to set up.  Must satisfy rigforge's >=3.11 requirement.
+    required: false
+    default: "3.13"
+
+  install-extras:
+    description: >
+      Extra pip install specifier for optional dependencies.  Defaults to
+      `[dev]` for the full test suite + linter.  Use `[mcp]` if you need
+      the MCP server gates.
+    required: false
+    default: "[dev]"
+
+  working-directory:
+    description: >
+      Override the project root.  When omitted, rigforge walks upward from
+      $GITHUB_WORKSPACE looking for pyproject.toml / rigforge.yaml / .git.
+    required: false
+    default: ""
+
+# ── Outputs ─────────────────────────────────────────────────────────────
+
+outputs:
+  ok:
+    description: >
+      "true" if every hard-block gate passed; "false" otherwise.
+      This is the primary pass/fail signal for downstream steps.
+    value: ${{ steps.gates.outputs.ok }}
+
+  phase:
+    description: "Phase number that was evaluated."
+    value: ${{ steps.gates.outputs.phase }}
+
+  gate-count:
+    description: "Total number of gates executed."
+    value: ${{ steps.gates.outputs.gate_count }}
+
+  passed-count:
+    description: "Number of gates that passed."
+    value: ${{ steps.gates.outputs.passed_count }}
+
+  failed-count:
+    description: "Number of gates that failed (any severity)."
+    value: ${{ steps.gates.outputs.failed_count }}
+
+  blocking-failed-count:
+    description: "Number of hard-block gates that failed."
+    value: ${{ steps.gates.outputs.blocking_failed_count }}
+
+  sealed:
+    description: >
+      "true" if a ProofPacket was sealed; "false" if sealing was skipped
+      (due to failures, seal: false, or dry-run).
+    value: ${{ steps.seal.outputs.sealed }}
+
+  proof-path:
+    description: >
+      Path to the sealed ProofPacket JSON, if sealing succeeded.
+    value: ${{ steps.seal.outputs.proof_path }}
+
+  gate-summary:
+    description: >
+      Markdown table of every gate result — name, passed, severity, detail.
+      Written to the step summary for human review.
+    value: ${{ steps.gates.outputs.gate_summary }}
+
+# ── Runs ────────────────────────────────────────────────────────────────
+
+runs:
+  using: "composite"
+  steps:
+    # ── 1. Set up Python ────────────────────────────────────────────────
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: pip
+        cache-dependency-path: pyproject.toml
+
+    # ── 2. Install RIGForge ────────────────────────────────────────────
+    - name: Install rigforge
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".${{ inputs.install-extras }}"
+
+    # ── 3. Validate inputs ─────────────────────────────────────────────
+    - name: Validate phase input
+      id: validate
+      shell: bash
+      run: |
+        phase="${{ inputs.phase }}"
+        if ! [[ "$phase" =~ ^[1-7]$ ]]; then
+          echo "::error::phase must be 1–7, got '$phase'"
+          exit 1
+        fi
+        echo "phase=$phase" >> "$GITHUB_OUTPUT"
+
+    # ── 4. Run gates ───────────────────────────────────────────────────
+    - name: Run RIGForge gates — phase ${{ inputs.phase }}
+      id: gates
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        PHASE="${{ inputs.phase }}"
+        WD="${{ inputs.working-directory }}"
+        CWD_FLAG=""
+        if [ -n "$WD" ]; then
+          CWD_FLAG="--cwd $WD"
+        fi
+
+        # Run gates and capture JSON output
+        GATES_JSON=$(rigforge $CWD_FLAG run "$PHASE" --json 2>&1) || {
+          # rigforge run exits non-zero when hard-block gates fail — that's
+          # expected.  We still parse whatever it emitted.
+          true
+        }
+
+        # Extract structured fields from the JSON harness result.
+        # The --json output is a JSON object with an `ok` boolean and a
+        # `gates` array; extract them with Python for reliability.
+        OK=$(python3 -c "
+        import json, sys
+        try:
+            data = json.loads('''$GATES_JSON''')
+            print(str(data.get('ok', False)).lower())
+        except Exception:
+            print('false')
+        ")
+
+        GATE_COUNT=$(python3 -c "
+        import json
+        try:
+            data = json.loads('''$GATES_JSON''')
+            gates = data.get('gates', [])
+            print(len(gates))
+        except Exception:
+            print(0)
+        ")
+
+        PASSED_COUNT=$(python3 -c "
+        import json
+        try:
+            data = json.loads('''$GATES_JSON''')
+            gates = data.get('gates', [])
+            print(sum(1 for g in gates if g.get('passed', False)))
+        except Exception:
+            print(0)
+        ")
+
+        FAILED_COUNT=$(python3 -c "
+        import json
+        try:
+            data = json.loads('''$GATES_JSON''')
+            gates = data.get('gates', [])
+            print(sum(1 for g in gates if not g.get('passed', True)))
+        except Exception:
+            print(0)
+        ")
+
+        BLOCKING_FAILED_COUNT=$(python3 -c "
+        import json
+        try:
+            data = json.loads('''$GATES_JSON''')
+            gates = data.get('gates', [])
+            print(sum(1 for g in gates
+                if not g.get('passed', True)
+                and g.get('severity', '') == 'hard_block'))
+        except Exception:
+            print(0)
+        ")
+
+        # Build a markdown gate summary for the step summary
+        GATE_SUMMARY=$(python3 -c "
+        import json
+        try:
+            data = json.loads('''$GATES_JSON''')
+            gates = data.get('gates', [])
+            if not gates:
+                print('No gates executed.')
+            else:
+                lines = ['| Gate | Passed | Severity | Detail |',
+                         '| --- | --- | --- | --- |']
+                for g in gates:
+                    p = 'yes' if g.get('passed') else 'no'
+                    s = g.get('severity', '?')
+                    d = (g.get('detail', '') or '').replace('|', '\\|')
+                    if len(d) > 120:
+                        d = d[:117] + '...'
+                    name = g.get('name', '?')
+                    lines.append(f'| {name} | {p} | {s} | {d} |')
+                print('\\n'.join(lines))
+        except Exception:
+            print('Could not parse gate output.')
+        ")
+
+        # Write outputs
+        echo "ok=$OK" >> "$GITHUB_OUTPUT"
+        echo "phase=$PHASE" >> "$GITHUB_OUTPUT"
+        echo "gate_count=$GATE_COUNT" >> "$GITHUB_OUTPUT"
+        echo "passed_count=$PASSED_COUNT" >> "$GITHUB_OUTPUT"
+        echo "failed_count=$FAILED_COUNT" >> "$GITHUB_OUTPUT"
+        echo "blocking_failed_count=$BLOCKING_FAILED_COUNT" >> "$GITHUB_OUTPUT"
+
+        # Write the gate summary as a heredoc (multi-line output)
+        {
+          echo "gate_summary<<RIGFORGE_GATE_EOF"
+          echo "$GATE_SUMMARY"
+          echo "RIGFORGE_GATE_EOF"
+        } >> "$GITHUB_OUTPUT"
+
+        # ── Step summary ────────────────────────────────────────────────
+        {
+          echo "## RIGForge Gates — Phase $PHASE"
+          echo ""
+          echo "**ok:** \`$OK\`  **gates:** $GATE_COUNT  **passed:** $PASSED_COUNT  **failed:** $FAILED_COUNT  **blocking-failed:** $BLOCKING_FAILED_COUNT"
+          echo ""
+          echo "$GATE_SUMMARY"
+          echo ""
+          if [ "$OK" = "false" ]; then
+            echo "> **Action required:** hard-block gate(s) failed.  Fix the"
+            echo "> failures above before this phase can be sealed."
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        # Fail the step if hard-block gates failed (unless force-sealing)
+        if [ "$OK" = "false" ] && [ "${{ inputs.force }}" != "true" ]; then
+          echo "::error::RIGForge hard-block gate(s) failed for phase $PHASE"
+          exit 1
+        fi
+
+    # ── 5. Seal the proof ──────────────────────────────────────────────
+    - name: Seal ProofPacket — phase ${{ inputs.phase }}
+      id: seal
+      if: inputs.seal == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        PHASE="${{ inputs.phase }}"
+        WD="${{ inputs.working-directory }}"
+        CWD_FLAG=""
+        if [ -n "$WD" ]; then
+          CWD_FLAG="--cwd $WD"
+        fi
+
+        # Build the seal command
+        SEAL_CMD="rigforge $CWD_FLAG seal $PHASE"
+
+        # Always use --force when input says so
+        if [ "${{ inputs.force }}" = "true" ]; then
+          SEAL_CMD="$SEAL_CMD --force"
+        fi
+
+        # Bind a spec if provided
+        SPEC_PATH="${{ inputs.spec }}"
+        if [ -n "$SPEC_PATH" ]; then
+          SEAL_CMD="$SEAL_CMD --spec $SPEC_PATH"
+        fi
+
+        # Add evidence if provided
+        EVIDENCE="${{ inputs.evidence }}"
+        if [ -n "$EVIDENCE" ]; then
+          SEAL_CMD="$SEAL_CMD --evidence \"$EVIDENCE\""
+        fi
+
+        # Run the seal
+        if eval "$SEAL_CMD --json" > /tmp/rigforge-seal.json 2>&1; then
+          echo "sealed=true" >> "$GITHUB_OUTPUT"
+
+          PROOF_PATH=$(python3 -c "
+          import json
+          try:
+              data = json.load(open('/tmp/rigforge-seal.json'))
+              print(data.get('proof_path', 'proofs/phase${{ inputs.phase }}_proof.json'))
+          except Exception:
+              print('proofs/phase${{ inputs.phase }}_proof.json')
+          ")
+          echo "proof_path=$PROOF_PATH" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Sealed"
+            echo ""
+            echo "ProofPacket written to \`$PROOF_PATH\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "sealed=false" >> "$GITHUB_OUTPUT"
+          echo "proof_path=" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Seal skipped"
+            echo ""
+            echo "Phase $PHASE could not be sealed.  Check gate results above."
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    # ── 6. Optional: strict verify ─────────────────────────────────────
+    - name: Strict verify
+      if: inputs.strict == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        WD="${{ inputs.working-directory }}"
+        CWD_FLAG=""
+        if [ -n "$WD" ]; then
+          CWD_FLAG="--cwd $WD"
+        fi
+
+        if rigforge $CWD_FLAG verify --strict --json; then
+          {
+            echo "### Verify (strict)"
+            echo ""
+            echo "All sealed phases pass strict continuity checks."
+          } >> "$GITHUB_STEP_SUMMARY"
+        else
+          {
+            echo "### Verify (strict) — FAILED"
+            echo ""
+            echo "Phase-order gaps detected.  See rigforge verify output above."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+        fi

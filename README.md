@@ -72,7 +72,7 @@ RIGForge makes agent output **provable**:
 
 ```bash
 git clone https://github.com/mrodgersjs-web/rigforge.git
-cd rigforge-deterministic-platform
+cd rigforge
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
 
@@ -191,6 +191,51 @@ Skip a requirement and the verdict flips — provably, not on a vibe:
 
 Observability shows what happened; eval scores quality; orchestration runs the fleet. Proving
 *build-matches-spec* is the part nobody else does.
+
+## Merge gate — block unsigned proofs before they land
+
+RIGForge enforces a merge gate: **no PR merges unless it carries a valid, signed
+ProofPacket.** This is not a recommendation — it's a CI enforcement point.
+
+In practice: your CI workflow runs `rigforge verify --require-signature` as a
+required check. The agent seals work before opening the PR; the gate re-verifies
+the seal on push. An unsigned or tampered proof fails the check, and the PR
+stays open.
+
+```yaml
+# .github/workflows/ci.yml — required check for PRs
+- name: Verify proof
+  run: rigforge verify --require-signature
+```
+
+The signing key stays in CI secrets — the agent never sees it, so it can't forge
+its own verdict. This is the intended deployment: seal on the agent's machine,
+verify on the CI runner, key lives nowhere the agent touches.
+
+## Public attestation — compose with Sigstore / in-toto / SLSA
+
+RIGForge's HMAC signature is **symmetric** — the same key seals and verifies.
+That means it proves integrity to *you*, but a third party can't check it without
+also getting the key (which gives them the ability to forge). If you need public
+verifiability — downstream consumers, auditors, or a public transparency log —
+compose with asymmetric attestation:
+
+| Layer | What it does | RIGForge role |
+|-------|-------------|---------------|
+| **[Sigstore](https://www.sigstore.dev/)** (`cosign`) | Keyless signing with short-lived certificates + public transparency log | RIGForge decides *what is true about the run*; Sigstore makes that decision *publicly checkable* |
+| **[in-toto](https://in-toto.io/)** | Signed attestations about supply-chain steps | RIGForge's ProofPacket is the attestation content; in-toto wraps it in a signed supply-chain layout |
+| **[SLSA](https://slsa.dev/)** | Provenance framework built on in-toto attestations | RIGForge seals the provenance; SLSA carries it through the build pipeline |
+
+A concrete example: seal a phase with RIGForge, then wrap the ProofPacket in a
+Sigstore attestation so anyone on your team can verify with `cosign verify-attestation`
+— no signing key exchange required, backed by a public transparency log.
+
+RIGForge does not do asymmetric signing or public attestation natively. It does
+the part nobody else does — *proving the run itself is untampered* — and hands
+off to a mature attestation layer for the public-verifiability half.
+
+See [`SECURITY.md`](SECURITY.md) for the full HMAC limitation and the compose
+path.
 
 ## Honest scope
 

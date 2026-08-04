@@ -21,11 +21,11 @@ class GapFinding:
 
 
 GAPS: tuple[GapFinding, ...] = (
-    GapFinding("G004", "reproducibility", "advisory", "RunEnvelope captures Python/platform fingerprint but does not hash full dep lockfile."),
 )
 
 
 RESOLVED_GAPS: tuple[GapFinding, ...] = (
+    GapFinding("G004", "reproducibility", "advisory", "RunEnvelope now hashes dep lockfile via _discover_lockfiles + _lockfile_hash."),
     GapFinding("G001", "mcp", "soft", "MCP stdio transport — implemented in rigforge.mcp_server.serve_stdio (JSON-RPC 2.0)."),
     GapFinding("G002", "harness", "soft", "Multi-agent scheduling — ArchonHarness runs gates in parallel via scheduler.max_parallel_gates."),
     GapFinding("G003", "auth", "soft", "MCP HTTP authn — bearer-token middleware; token via RIGFORGE_MCP_TOKEN or rigforge.yaml."),

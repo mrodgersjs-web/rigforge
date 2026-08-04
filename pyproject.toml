@@ -35,6 +35,12 @@ mcp = [
     "fastapi>=0.110,<1.0",
     "uvicorn>=0.29,<1.0",
 ]
+# Public attestation — ed25519 asymmetric signing for ProofPackets.
+# rigforge.public_attest imports cryptography lazily; without this extra
+# the import raises a clear error with install instructions.
+public = [
+    "cryptography>=42.0,<44.0",
+]
 # README documents `pip install -e ".[telemetry]"`; these are the packages
 # rigforge/telemetry.py actually imports. The module probes for them once and
 # degrades to a no-op when absent, so this stays optional -- but the documented

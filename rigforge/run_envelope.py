@@ -23,6 +23,7 @@ import platform
 import sys
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -45,6 +46,50 @@ def _env_fingerprint() -> str:
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
+# ── Lockfile discovery (G004) ────────────────────────────────────────
+
+LOCKFILE_NAMES: tuple[str, ...] = (
+    "requirements.txt",
+    "requirements-lock.txt",
+    "constraints.txt",
+    "poetry.lock",
+    "uv.lock",
+    "Pipfile.lock",
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "pnpm-lock.yml",
+)
+
+
+def _discover_lockfiles(start: Path | None = None) -> list[Path]:
+    """Walk upward from *start* (defaulting to cwd) and collect lockfiles.
+
+    Returns every lockfile found in the walk from *start* up to (and
+    including) the filesystem root.  The order is nearest-first.
+    """
+    root = (start or Path.cwd()).resolve()
+    found: list[Path] = []
+    for candidate in (root, *root.parents):
+        for name in LOCKFILE_NAMES:
+            path = candidate / name
+            if path.is_file():
+                found.append(path)
+    return found
+
+
+def _lockfile_hash(lockfiles: list[Path]) -> str:
+    """Deterministic SHA-256 over the sorted contents of *lockfiles*.
+
+    When no lockfiles are provided the hash is the empty-blob SHA-256 so
+    that the field is always present and of constant length.
+    """
+    sha = hashlib.sha256()
+    for path in sorted(lockfiles):
+        sha.update(path.read_bytes())
+    return sha.hexdigest()
+
+
 def _detect_mode() -> RunMode:
     if os.environ.get("CI", "").lower() in ("1", "true"):
         return "ci"
@@ -64,6 +109,14 @@ class RunEnvelope(BaseModel):
     python_version: str = Field(default_factory=lambda: sys.version.split()[0])
     platform: str = Field(default_factory=platform.platform)
     env_fingerprint: str = Field(default_factory=_env_fingerprint)
+    lockfile_hash: str = Field(
+        default_factory=lambda: _lockfile_hash(_discover_lockfiles()),
+        description="SHA-256 of the sorted dep-lockfile contents found during run construction.",
+    )
+    lockfiles: list[str] = Field(
+        default_factory=lambda: [str(p) for p in _discover_lockfiles()],
+        description="Paths to lockfiles discovered during run construction.",
+    )
     mode: RunMode = Field(default_factory=_detect_mode)
     dry_run: bool = False
     verifier: str | None = Field(

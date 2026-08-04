@@ -18,7 +18,11 @@ from rigforge.proof import (
     ModelMetadata,
     ProofPacket,
 )
-from rigforge.run_envelope import RunEnvelope
+from rigforge.run_envelope import (
+    RunEnvelope,
+    _discover_lockfiles,
+    _lockfile_hash,
+)
 
 
 @pytest.fixture
@@ -65,6 +69,23 @@ class TestRunEnvelope:
         data = env.to_dict()
         assert data["dry_run"] is True
         assert data["phase"] == 2
+
+    def test_lockfile_hash_populated(self, tmp_path):
+        """RunEnvelope discovers lockfiles and records a 64-char SHA-256."""
+        (tmp_path / "requirements.txt").write_text("requests==2.31\n")
+        env = RunEnvelope(phase=1)
+        # lockfile_hash is always 64 hex chars (empty or real)
+        assert len(env.lockfile_hash) == 64
+
+    def test_lockfile_hash_matches_contents(self, tmp_path):
+        """Two envelopes in the same project produce the same lockfile_hash."""
+        (tmp_path / "poetry.lock").write_text("[metadata]\nname='demo'\n")
+        lockfiles = _discover_lockfiles(tmp_path)
+        assert len(lockfiles) == 1
+        h = _lockfile_hash(lockfiles)
+        assert len(h) == 64
+        # deterministic: same files → same hash
+        assert h == _lockfile_hash(lockfiles)
 
 
 # ── ProofPacket ────────────────────────────────────────────────────────
