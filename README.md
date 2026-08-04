@@ -325,6 +325,16 @@ MIT — see [LICENSE](LICENSE). Built by [RIG (Rodgers Intelligence Group)](http
 
 ---
 
+
+
+## Video walkthrough
+
+- Script: [`docs/video-script.md`](docs/video-script.md)
+- Recording: [`assets/demo.mp4`](assets/demo.mp4) (75s captioned)
+- Preview: [`assets/demo.gif`](assets/demo.gif)
+
+![demo preview](assets/demo.gif)
+
 ## FDE bar (this studio)
 
 | Practice | Here |
@@ -336,3 +346,8 @@ MIT — see [LICENSE](LICENSE). Built by [RIG (Rodgers Intelligence Group)](http
 | Fleet | [profile](https://github.com/mrodgersjs-web) · [resume](https://github.com/mrodgersjs-web/resume) · [patents](https://github.com/mrodgersjs-web/patents) |
 
 If `scripts/smoke.sh` fails, treat README claims as false until fixed.
+
+
+## Employer entry path
+
+For the shortest false-done demo, start at [`proof-studio`](https://github.com/mrodgersjs-web/proof-studio) (`bash scripts/smoke.sh`).
