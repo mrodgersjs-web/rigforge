@@ -69,10 +69,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["rigforge", "contracts"]
-# The vanilla SPA assets (index.html / app.js / style.css) ship inside the
-# wheel so ``rigforge serve`` works from an installed package, not just a
-# source checkout.
-force-include = { "rigforge/web" = "rigforge/web" }
+# Non-.py assets under rigforge/ (web SPA) are already collected via the
+# package path above. Do NOT also force-include rigforge/web — hatchling
+# then adds the same files twice and the wheel build fails with:
+#   ValueError: A second file is being added ... rigforge/web/app.js
 
 [tool.pytest.ini_options]
 testpaths = ["rigforge/tests", "contracts/v1/tests"]
