@@ -321,3 +321,18 @@ MIT — see [LICENSE](LICENSE). Built by [RIG (Rodgers Intelligence Group)](http
 
 > ⭐ If "prove it, don't trust it" is how you want your agents to work, star the repo —
 > it's the signal that keeps this free core moving.
+
+
+---
+
+## FDE bar (this studio)
+
+| Practice | Here |
+| --- | --- |
+| Employer summary | top of README |
+| Smoke proof | `bash scripts/smoke.sh` |
+| Public boundary | `docs/public-boundary.md` |
+| Claim under test | rigforge demo |
+| Fleet | [profile](https://github.com/mrodgersjs-web) · [resume](https://github.com/mrodgersjs-web/resume) · [patents](https://github.com/mrodgersjs-web/patents) |
+
+If `scripts/smoke.sh` fails, treat README claims as false until fixed.
