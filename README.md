@@ -1,6 +1,8 @@
 # RIGForge
 
 ### Don't trust your agents. Prove them.
+**Outcome:** `rigforge demo` catches a forged "BUILD COMPLETE" in 5 seconds — naive integrity check PASSES but the HMAC-SHA256 signature check FAILS, detecting the tamper across 5 attack scenarios in the offline benchmark.
+
 
 **RIGForge catches your AI coding agent when it lies about "done."** When an agent
 says `BUILD COMPLETE ✅`, you have its word and nothing behind it. RIGForge replaces
