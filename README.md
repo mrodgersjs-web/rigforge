@@ -15,7 +15,7 @@ something you re-verify with one command, not a message in a chat thread.
 ![Works with](https://img.shields.io/badge/works%20with-Claude%20Code%20·%20Codex%20·%20Cursor-8A2BE2.svg)
 
 <p align="center">
-  <img src="docs/demo.svg" alt="rigforge demo — RIGForge catches a forged 'BUILD COMPLETE' by failing the HMAC signature check" width="720">
+  <img src="docs/rigforge-demo.gif" alt="rigforge demo — RIGForge catches a forged 'BUILD COMPLETE' by failing the HMAC signature check" width="720">
 </p>
 
 ---
