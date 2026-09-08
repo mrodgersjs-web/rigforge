@@ -224,17 +224,57 @@ class TestStdioTransport:
         assert "gev.contract_create" in names
         assert "gev.phase_status" in names
 
-    def test_tools_call_dispatch(self):
-        from rigforge.mcp_server import handle_jsonrpc
+    @pytest.mark.parametrize(
+        (("tool_name", "arguments", "original")),
+        (
+            (
+                "gev.contract_create",
+                {"studio": "s", "lane": "L"},
+                {
+                    "studio": "s",
+                    "lane": "L",
+                    "objective": "ship a bounded change",
+                    "sealed": False,
+                },
+            ),
+            (
+                "gev.contract_list",
+                {},
+                ["contracts/alpha.yaml", "contracts/beta.yaml"],
+            ),
+        ),
+    )
+    def test_tools_call_returns_json_text_content(
+        self,
+        monkeypatch,
+        tool_name,
+        arguments,
+        original,
+    ):
+        from rigforge import mcp_server
 
-        resp = handle_jsonrpc({
-            "jsonrpc": "2.0", "id": 3,
-            "method": "tools/call",
-            "params": {"name": "gev.contract_create",
-                       "arguments": {"studio": "s", "lane": "L"}},
-        })
+        monkeypatch.setitem(
+            mcp_server.TOOL_DISPATCH,
+            tool_name,
+            lambda **_arguments: original,
+        )
+        resp = mcp_server.handle_jsonrpc(
+            {
+                "jsonrpc": "2.0",
+                "id": 3,
+                "method": "tools/call",
+                "params": {"name": tool_name, "arguments": arguments},
+            }
+        )
+
         assert "error" not in resp
-        assert resp["result"]["content"]["studio"] == "s"
+        content = resp["result"]["content"]
+        assert isinstance(content, list) and content
+        assert len(content) == 1
+        assert set(content[0]) == {"type", "text"}
+        assert content[0]["type"] == "text"
+        assert isinstance(content[0]["text"], str)
+        assert json.loads(content[0]["text"]) == original
 
     def test_unknown_tool_returns_error(self):
         from rigforge.mcp_server import handle_jsonrpc
@@ -258,6 +298,20 @@ class TestStdioTransport:
         assert len(lines) == 2
         assert lines[0]["result"]["pong"] is True
         assert lines[1]["result"]["tools"]
+
+    def test_initialized_notification_produces_no_response(self):
+        from rigforge.mcp_server import serve_stdio
+
+        notification = json.dumps(
+            {
+                "jsonrpc": "2.0",
+                "method": "notifications/initialized",
+                "params": {},
+            }
+        )
+        out = io.StringIO()
+        serve_stdio(io.StringIO(f"{notification}\n"), out)
+        assert out.getvalue() == ""
 
     def test_serve_stdio_parse_error(self):
         from rigforge.mcp_server import serve_stdio

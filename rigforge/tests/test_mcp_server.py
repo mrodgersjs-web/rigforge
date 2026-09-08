@@ -24,7 +24,12 @@ class TestSealAndVerify:
 
     def test_honest_claim_accepted_and_recorded(self, tmp_path, monkeypatch):
         self._isolate(tmp_path, monkeypatch)
-        v = seal_and_verify("claude-code", "feature X", artifacts=["build.bin"])
+        v = seal_and_verify(
+            "claude-code",
+            "feature X",
+            artifacts=["build.bin"],
+            gates=[{"name": "smoke", "passed": True}],
+        )
         assert v["accepted"] is True
         assert v["integrity_ok"] is True
         assert v["signature_ok"] is True
@@ -32,6 +37,21 @@ class TestSealAndVerify:
         board = ExecutionLedger(tmp_path / "ledger" / "execution.jsonl").verdicts()
         assert board["claude-code"]["accepted"] == 1
         assert board["claude-code"]["rejected"] == 0
+
+    def test_missing_gates_rejects_claim(self, tmp_path, monkeypatch):
+        self._isolate(tmp_path, monkeypatch)
+        v = seal_and_verify("claude-code", "feature X", artifacts=["build.bin"])
+        assert v["accepted"] is False
+
+    def test_failed_gate_rejects_claim(self, tmp_path, monkeypatch):
+        self._isolate(tmp_path, monkeypatch)
+        v = seal_and_verify(
+            "claude-code",
+            "feature X",
+            artifacts=["build.bin"],
+            gates=[{"name": "smoke", "passed": False}],
+        )
+        assert v["accepted"] is False
 
     def test_exposed_in_catalogue(self):
         assert any(t["name"] == "gev.seal_and_verify" for t in list_tools())
@@ -45,7 +65,12 @@ class TestSealAndVerify:
                 "method": "tools/call",
                 "params": {
                     "name": "gev.seal_and_verify",
-                    "arguments": {"agent": "cursor", "name": "feat Y", "artifacts": ["build.bin"]},
+                    "arguments": {
+                        "agent": "cursor",
+                        "name": "feat Y",
+                        "artifacts": ["build.bin"],
+                        "gates": [{"name": "smoke", "passed": True}],
+                    },
                 },
             }
         )

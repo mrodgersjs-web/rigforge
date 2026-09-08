@@ -167,13 +167,20 @@ def seal_and_verify(
     key = _project_signing_key()
     root = Path.cwd()
     records = [ArtifactRecord.from_path(Path(a), base=root) for a in (artifacts or [])]
+    source_gates = gates if gates else [
+        {
+            "name": "gate evidence",
+            "passed": False,
+            "detail": "No gate outcomes were supplied.",
+        }
+    ]
     gate_outcomes = [
         GateOutcome(
             name=str(g.get("name", "gate")),
-            passed=bool(g.get("passed", True)),
+            passed=g.get("passed") is True,
             detail=str(g.get("detail", "")),
         )
-        for g in (gates or [{"name": "build", "passed": True}])
+        for g in source_gates
     ]
     spec_binding = None
     if spec:
@@ -202,7 +209,10 @@ def seal_and_verify(
         spec_result = {"ok": sm.ok, "missing": sm.missing}
 
     accepted = bool(
-        integrity_ok and signature_ok and (spec_result["ok"] if spec_result else True)
+        integrity_ok
+        and signature_ok
+        and all(outcome.passed for outcome in gate_outcomes)
+        and (spec_result["ok"] if spec_result else True)
     )
 
     ExecutionLedger(root / "ledger" / "execution.jsonl").append(
@@ -329,18 +339,21 @@ def _jsonrpc_response(*, id: Any, result: Any = None, error: dict | None = None)
     return out
 
 
-def handle_jsonrpc(message: dict[str, Any]) -> dict[str, Any]:
-    """Dispatch one JSON-RPC 2.0 request and return the response dict.
+def handle_jsonrpc(message: dict[str, Any]) -> dict[str, Any] | None:
+    """Dispatch one JSON-RPC 2.0 request or consume a notification.
 
     Supported methods:
       - ``initialize``        — MCP handshake (returns server info)
       - ``tools/list``        — return the catalogue
       - ``tools/call``        — invoke a tool by name with ``arguments``
       - ``ping``              — liveness
+    Notifications omit ``id`` and produce no response.
     """
     rpc_id = message.get("id")
     method = message.get("method", "")
     params = message.get("params") or {}
+    if "id" not in message:
+        return None
 
     if method == "initialize":
         return _jsonrpc_response(
@@ -375,7 +388,17 @@ def handle_jsonrpc(message: dict[str, Any]) -> dict[str, Any]:
             return _jsonrpc_response(
                 id=rpc_id, error={"code": -32000, "message": str(exc)}
             )
-        return _jsonrpc_response(id=rpc_id, result={"content": result})
+        return _jsonrpc_response(
+            id=rpc_id,
+            result={
+                "content": [
+                    {
+                        "type": "text",
+                        "text": json.dumps(result, sort_keys=True, default=str),
+                    }
+                ]
+            },
+        )
 
     return _jsonrpc_response(
         id=rpc_id, error={"code": -32601, "message": f"unknown method: {method}"}
@@ -405,6 +428,8 @@ def serve_stdio(input_stream: IO[str] | None = None,
             )
         else:
             response = handle_jsonrpc(message)
+        if response is None:
+            continue
         out.write(json.dumps(response) + "\n")
         out.flush()
 

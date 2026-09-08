@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<evals>
+  <eval id="1">
+    <question>Call gev.contract_create with studio `eval-studio`, lane `BC-DOCS-V1`, and objective `Document MCP setup`. Pass the complete returned contract object to gev.contract_validate and report its validity.</question>
+    <expected>The create call uses all three literals; the validate call receives the complete returned object. Report the validator output rather than assuming creation means validity.</expected>
+  </eval>
+  <eval id="2">
+    <question>Call gev.contract_list, then call gev.phase_status with integer phase `1`. Explain what the contract file list and phase 1 status do and do not establish.</question>
+    <expected>Report the file list and phase 1 state independently; do not claim that any listed contract is linked to phase 1.</expected>
+  </eval>
+  <eval id="3">
+    <question>Call gev.contract_create with studio `eval-studio`, lane `BC-CODE-V1`, and objective `Ship bounded code fix`; validate the complete returned contract. Then call gev.seal_and_verify with agent `eval-agent`, name `docs-change`, artifacts `["artifacts/proof.json"]`, gates `[{"name":"smoke","passed":true}]`, and integer phase `1`.</question>
+    <expected>Use the exact literals, pass the complete created contract to validation, and report create, validation, and verifier results independently.</expected>
+  </eval>
+  <eval id="4">
+    <question>Call gev.contract_validate with the malformed object `{"studio":"eval-studio"}`, which is missing lane. Then recover with gev.contract_create using studio `eval-studio`, lane `BC-RECOVERY-V1`, and objective `Recover invalid contract`, and validate the complete returned contract.</question>
+    <expected>Preserve the first invalid result, then report the create result and the validation of its complete returned object.</expected>
+  </eval>
+  <eval id="5">
+    <question>Call gev.phase_status with integer phase `1`, call gev.proof_seal with phase `1` and artifacts `["artifacts/proof.json"]`, then call gev.phase_status with phase `1` again.</question>
+    <expected>Compare the two phase 1 reads and the intervening proof seal using only returned data for `artifacts/proof.json`.</expected>
+  </eval>
+  <eval id="6">
+    <question>Call gev.phase_status with integer phase `2`. If phase 2 is unsealed, call gev.proof_seal with phase `2` and artifacts `["artifacts/proof.json"]`, then explain the result without inferring contract linkage.</question>
+    <expected>Use phase 2 in both calls and the exact artifact path. Seal only when the returned phase 2 state is unsealed.</expected>
+  </eval>
+  <eval id="7">
+    <question>Call gev.phase_status with integer phase `3`. Then call gev.contract_create with studio `eval-studio`, lane `BC-STATUS-V1`, and objective `Separate contract and phase state`, and validate the complete returned contract.</question>
+    <expected>Use phase 3 and all create literals. Explain that the phase status and validation of the complete returned contract are independent outputs.</expected>
+  </eval>
+  <eval id="8">
+    <question>After gev.contract_list returns empty, call gev.contract_create with studio `eval-studio`, lane `BC-EMPTY-V1`, and objective `Create first contract`, then validate the complete returned contract.</question>
+    <expected>Treat the empty list as valid partial information, use all create literals, validate the complete returned object, and make no persistence claim.</expected>
+  </eval>
+  <eval id="9">
+    <question>Call gev.contract_create with studio `eval-studio`, lane `BC-HANDOFF-V1`, and objective `Build traceable handoff`, then validate the complete returned contract. Call gev.proof_seal with phase `4` and artifacts `["artifacts/proof.json"]`; then call gev.seal_and_verify with agent `eval-agent`, name `docs-change`, artifacts `["artifacts/proof.json"]`, gates `[{"name":"smoke","passed":true}]`, and phase `4`.</question>
+    <expected>Use every literal exactly and keep contract validation, phase 4 proof sealing, and seal-and-verify results distinct.</expected>
+  </eval>
+  <eval id="10">
+    <question>Call gev.phase_status with integer phase `1`. Then call gev.seal_and_verify with agent `eval-agent`, name `docs-change`, artifacts `["artifacts/proof.json"]`, gates `[{"name":"smoke","passed":true}]`, and phase `1`; finally call gev.phase_status with phase `1` again.</question>
+    <expected>Compare the two phase 1 reads while treating the concrete seal-and-verify result as independent evidence.</expected>
+  </eval>
+</evals>

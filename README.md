@@ -131,6 +131,24 @@ rigforge mcp-serve --transport stdio          # preferred by Claude Code et al.
 rigforge mcp-serve --auth-token "$RIGFORGE_MCP_TOKEN"   # HTTP, bearer-token auth
 ```
 
+### Claude Desktop stdio
+
+From the RIGForge clone, install the package with `pip install -e .` in the Python environment Claude Desktop uses. Replace the example `cwd` with the clone's path.
+
+```json
+{
+  "mcpServers": {
+    "rigforge": {
+      "command": "rigforge",
+      "args": ["mcp-serve", "--transport", "stdio"],
+      "cwd": "/path/to/rigforge"
+    }
+  }
+}
+```
+
+This launches `rigforge mcp-serve --transport stdio`.
+
 **Your observability** — RIGForge emits OpenTelemetry spans per phase and gate. Point it at
 your existing collector and traces drop into **Langfuse / Phoenix / Jaeger**. With no
 collector set, spans print as OTLP-JSON to stdout. Not installed? It's a clean no-op — the
