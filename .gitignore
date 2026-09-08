@@ -53,3 +53,6 @@ docs/LAUNCH.md
 
 # internal 1000x roadmap (not public)
 docs/ROADMAP-1000X.md
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

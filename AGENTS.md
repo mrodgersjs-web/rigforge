@@ -20,3 +20,35 @@ bash scripts/smoke.sh
 2. doctrine (if relevant)
 3. this AGENTS.md
 4. docs/public-boundary.md
+
+## Repository quick reference
+
+RIGForge turns agent completion claims into signed, replayable ProofPackets and rejects tampered evidence.
+
+- `rigforge/`: Python package, CLI, proof, verification, and service code.
+- `contracts/v1/`: public versioned contracts.
+- `examples/`: integrations and demonstrations.
+- `scripts/`: smoke entry point.
+- `docs/`: architecture, threat model, deployment, and extension guidance.
+- `graft/`: generated context; read when useful and preserve unchanged.
+
+Bootstrap from the repository root:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e .
+```
+
+Test and smoke:
+
+```bash
+bash scripts/smoke.sh
+```
+
+Run the public demonstration:
+
+```bash
+rigforge demo
+```
+
+Always run the smoke command before claiming done.
