@@ -197,6 +197,99 @@ class TestRunSealVerify:
         phase1 = next(p for p in payload["phases"] if p["phase"] == 1)
         assert phase1["integrity_ok"] is True
 
+    def test_seal_accepts_relative_artifact_path(self, runner, project):
+        _invoke(runner, project, "init")
+        artifact = project / "docs" / "relative-evidence.txt"
+        artifact.parent.mkdir(parents=True, exist_ok=True)
+        artifact.write_text("relative artifact")
+
+        result = _invoke(
+            runner, project, "--json",
+            "seal", "1",
+            "--artifact", "docs/relative-evidence.txt",
+            "--evidence", "relative path still accepted",
+        )
+
+        assert result.exit_code == 0, result.output
+        raw = json.loads((project / "proofs" / "phase1_proof.json").read_text())
+        assert raw["artifacts"][0]["path"] == "docs/relative-evidence.txt"
+
+    def test_seal_rejects_absolute_artifact_outside_project_before_run(
+        self, runner, project, tmp_path, monkeypatch
+    ):
+        _invoke(runner, project, "init")
+        outside_dir = tmp_path.parent / f"{tmp_path.name}-outside"
+        outside_dir.mkdir()
+        outside = outside_dir / "outside-evidence.txt"
+        outside.write_text("outside")
+
+        def fail_if_called(*args, **kwargs):
+            raise AssertionError("ArchonHarness must not be constructed for invalid artifact input")
+
+        monkeypatch.setattr("rigforge.cli.ArchonHarness", fail_if_called)
+
+        result = _invoke(
+            runner, project, "--json",
+            "seal", "1",
+            "--force",
+            "--artifact", str(outside),
+            "--evidence", "invalid",
+        )
+
+        assert result.exit_code == 2
+        payload = json.loads(result.output)
+        assert payload == {
+            "ok": False,
+            "phase": 1,
+            "error": "artifact_outside_project",
+            "artifact": str(outside),
+            "message": (
+                "--artifact must be relative to the project root or an absolute "
+                "path inside the project root; copy external evidence into the "
+                "project before sealing."
+            ),
+        }
+        assert not (project / "proofs" / "phase1_proof.json").exists()
+
+    def test_seal_rejects_one_bad_artifact_without_partial_write(self, runner, project, tmp_path):
+        _invoke(runner, project, "init")
+        inside = project / "docs" / "inside.txt"
+        inside.parent.mkdir(parents=True, exist_ok=True)
+        inside.write_text("inside")
+        outside_dir = tmp_path.parent / f"{tmp_path.name}-outside"
+        outside_dir.mkdir()
+        outside = outside_dir / "outside.txt"
+        outside.write_text("outside")
+        proof = project / "proofs" / "phase1_proof.json"
+        proof.parent.mkdir(parents=True, exist_ok=True)
+        original = '{"existing": true}\n'
+        proof.write_text(original)
+
+        result = _invoke(
+            runner, project,
+            "seal", "1",
+            "--force",
+            "--artifact", str(inside),
+            "--artifact", str(outside),
+        )
+
+        assert result.exit_code == 2
+        assert "outside the RIGForge project root" in result.output
+        assert proof.read_text() == original
+
+    def test_seal_text_error_for_absolute_artifact_outside_project(self, runner, project, tmp_path):
+        _invoke(runner, project, "init")
+        outside_dir = tmp_path.parent / f"{tmp_path.name}-outside"
+        outside_dir.mkdir()
+        outside = outside_dir / "outside.txt"
+        outside.write_text("outside")
+
+        result = _invoke(runner, project, "seal", "1", "--artifact", str(outside))
+
+        assert result.exit_code == 2
+        assert "Invalid artifact path" in result.output
+        assert "Copy external evidence into the project" in result.output
+
 
 # ── contract group ─────────────────────────────────────────────────────
 
