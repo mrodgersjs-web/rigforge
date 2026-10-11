@@ -244,9 +244,8 @@ class TestRunSealVerify:
             "error": "artifact_outside_project",
             "artifact": str(outside),
             "message": (
-                "--artifact must be relative to the project root or an absolute "
-                "path inside the project root; copy external evidence into the "
-                "project before sealing."
+                "Absolute --artifact paths must be inside the project root. "
+                "Copy external evidence into the project and pass its absolute path."
             ),
         }
         assert not (project / "proofs" / "phase1_proof.json").exists()
@@ -288,7 +287,7 @@ class TestRunSealVerify:
 
         assert result.exit_code == 2
         assert "Invalid artifact path" in result.output
-        assert "Copy external evidence into the project" in result.output
+        assert "Copy external evidence into the project and pass its absolute path" in result.output
 
 
 # ── contract group ─────────────────────────────────────────────────────

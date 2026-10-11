@@ -452,17 +452,16 @@ def seal(click_ctx: click.Context, phase: int, artifacts: tuple[Path, ...],
             "error": "artifact_outside_project",
             "artifact": str(outside_artifact),
             "message": (
-                "--artifact must be relative to the project root or an absolute "
-                "path inside the project root; copy external evidence into the "
-                "project before sealing."
+                "Absolute --artifact paths must be inside the project root. "
+                "Copy external evidence into the project and pass its absolute path."
             ),
         }
         _emit(
             click_ctx,
             lambda: click.echo(
-                "❌ Invalid artifact path: "
+                "Invalid artifact path: "
                 f"{outside_artifact} is outside the RIGForge project root {ctx.root}. "
-                "Copy external evidence into the project or pass a relative project path."
+                "Copy external evidence into the project and pass its absolute path."
             ),
             payload,
         )
