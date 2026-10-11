@@ -108,6 +108,23 @@ def _ensure_gitignore_entry(root: Path, entry: str) -> None:
         fh.write(block)
 
 
+def _outside_project_artifact(ctx: ProjectContext, artifacts: tuple[Path, ...]) -> Path | None:
+    """Return the first absolute artifact path outside the project root.
+
+    Relative artifact paths keep the existing CLI semantics. This is only an
+    early input check for the unsupported case that would otherwise crash when
+    artifact paths are rendered relative to the project root.
+    """
+    for artifact in artifacts:
+        if not artifact.is_absolute():
+            continue
+        try:
+            artifact.relative_to(ctx.root)
+        except ValueError:
+            return artifact
+    return None
+
+
 # ── Root group ──────────────────────────────────────────────────────────
 
 
@@ -427,6 +444,29 @@ def seal(click_ctx: click.Context, phase: int, artifacts: tuple[Path, ...],
          spec_path: str | None, ed25519_key: str | None):
     """Seal phase N: writes a ProofPacket with checksums + run envelope."""
     ctx = _ctx(click_ctx)
+    outside_artifact = _outside_project_artifact(ctx, artifacts)
+    if outside_artifact is not None:
+        payload = {
+            "ok": False,
+            "phase": phase,
+            "error": "artifact_outside_project",
+            "artifact": str(outside_artifact),
+            "message": (
+                "Absolute --artifact paths must be inside the project root. "
+                "Copy external evidence into the project and pass its absolute path."
+            ),
+        }
+        _emit(
+            click_ctx,
+            lambda: click.echo(
+                "Invalid artifact path: "
+                f"{outside_artifact} is outside the RIGForge project root {ctx.root}. "
+                "Copy external evidence into the project and pass its absolute path."
+            ),
+            payload,
+        )
+        sys.exit(2)
+
     harness = ArchonHarness(ctx)
     actor = verifier or _verifier_identity()
     spec_binding = None
