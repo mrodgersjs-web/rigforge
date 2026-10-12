@@ -39,7 +39,7 @@ mcp = [
 # rigforge.public_attest imports cryptography lazily; without this extra
 # the import raises a clear error with install instructions.
 public = [
-    "cryptography>=42.0,<44.0",
+    "cryptography>=42.0,<51.0",
 ]
 # README documents `pip install -e ".[telemetry]"`; these are the packages
 # rigforge/telemetry.py actually imports. The module probes for them once and
