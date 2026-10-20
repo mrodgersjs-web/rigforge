@@ -192,7 +192,7 @@ def load_config(ctx: ProjectContext) -> RigForgeConfig:
     except yaml.YAMLError as exc:
         raise ValueError(f"{path}: YAML parse error: {exc}") from exc
     if not isinstance(raw, dict):
-        raise ValueError(f"{path}: top-level value must be a mapping")
+        raise ValueError(f"{path}: top-level value must be a mapping")  # noqa: TRY004 — load_config's tested contract is ValueError
     try:
         return RigForgeConfig(**raw)
     except Exception as exc:  # any failure surfaces as ValueError

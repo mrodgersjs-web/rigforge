@@ -124,7 +124,7 @@ def _resolve_hint(intent: str) -> tuple[Level, Diamond, Mode, float]:
     """Best-match keyword → (L, D, M, score). Falls back to A4 strategic."""
     lowered = intent.lower()
     best: tuple[str, int] = ("", -1)
-    for kw, hint in _KEYWORD_MAP.items():
+    for kw in _KEYWORD_MAP:
         if kw in lowered and len(kw) > best[1]:
             best = (kw, len(kw))
     if best[1] > 0:

@@ -4,7 +4,7 @@ Validates all five models: DoneContract, VerifierPackage, RequiredArtifact,
 AcceptanceCriterion, ForbiddenAction.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError
@@ -148,7 +148,7 @@ class TestDoneContract:
             studio="strategy",
             lane="BC-RIG-STRATEGY-V4",
             objective="Build RIG strategy deliverable",
-            created_at=datetime(2026, 1, 1, 12, 0, 0),
+            created_at=datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
             required_artifacts=[
                 RequiredArtifact(name="decision_contract", artifact_type=ArtifactType.DOC),
                 RequiredArtifact(name="evidence_pack", artifact_type=ArtifactType.PROOF),

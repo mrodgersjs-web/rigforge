@@ -204,7 +204,7 @@ class TestHashExclusion:
         """Manually setting public_* on an identical packet yields same hash."""
         from datetime import datetime, timezone
         ts = datetime(2025, 1, 1, tzinfo=timezone.utc)
-        common = dict(phase=3, name="h", verifier="v", sealed_at=ts)
+        common = {"phase": 3, "name": "h", "verifier": "v", "sealed_at": ts}
         pkt1 = ProofPacket(**common)
         pkt2 = ProofPacket(
             **common,

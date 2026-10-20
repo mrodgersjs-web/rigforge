@@ -65,7 +65,7 @@ def generate_keypair() -> tuple[bytes, str]:
         Hex-encoded 32-byte public key, suitable for storage in a
         ``ProofPacket.public_signer`` field.
     """
-    Ed25519PrivateKey, Ed25519PublicKey, serialization = _require_cryptography()
+    Ed25519PrivateKey, _Ed25519PublicKey, serialization = _require_cryptography()
     private_key = Ed25519PrivateKey.generate()
     private_bytes = private_key.private_bytes(
         serialization.Encoding.Raw,

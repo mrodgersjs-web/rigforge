@@ -129,11 +129,14 @@ class DoneContract(BaseModel):
     @model_validator(mode="after")
     def approval_requires_human(self) -> DoneContract:
         """If approval_required=True, verifier_package must have a human."""
-        if self.approval_required and self.verifier_package is not None:
-            if not self.verifier_package.has_human_in_chain():
-                raise ValueError(
-                    "approval_required=True but no human in verifier_package chain"
-                )
+        if (
+            self.approval_required
+            and self.verifier_package is not None
+            and not self.verifier_package.has_human_in_chain()
+        ):
+            raise ValueError(
+                "approval_required=True but no human in verifier_package chain"
+            )
         return self
 
     def is_sealed(self) -> bool:
