@@ -8,12 +8,17 @@ from pathlib import Path
 import pytest
 
 from rigforge.context import ProjectContext
-from rigforge.gates import gate_python_version, gate_repo_layout, gates_for_phase, HARD_BLOCK
+from rigforge.gates import (
+    HARD_BLOCK,
+    gate_python_version,
+    gate_repo_layout,
+    gates_for_phase,
+)
 from rigforge.harness import ArchonHarness
 from rigforge.ledger import ExecutionLedger
 from rigforge.proof import (
-    ArtifactRecord,
     BYTE_IDENTICAL_CLAIM,
+    ArtifactRecord,
     GateOutcome,
     ModelMetadata,
     ProofPacket,

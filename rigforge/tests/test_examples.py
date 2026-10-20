@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import importlib.util
-
 from pathlib import Path
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "examples"

@@ -1,15 +1,15 @@
 """Tests for RIGForge MCP server."""
 
+from rigforge.ledger import ExecutionLedger
 from rigforge.mcp_server import (
     contract_create,
-    contract_validate,
     contract_list,
+    contract_validate,
     handle_jsonrpc,
     list_tools,
     proof_seal,
     seal_and_verify,
 )
-from rigforge.ledger import ExecutionLedger
 
 
 class TestSealAndVerify:

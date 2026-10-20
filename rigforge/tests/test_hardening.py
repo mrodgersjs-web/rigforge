@@ -88,7 +88,7 @@ class TestMCPSecurityDefaults:
     def test_http_with_no_token_refuses_to_start(self):
         """Pre-fix: a tokenless server was happily constructed (open RPC
         surface). Now it must refuse before doing anything."""
-        from rigforge.mcp_server import create_mcp_server, MCPInsecureBindError
+        from rigforge.mcp_server import MCPInsecureBindError, create_mcp_server
 
         with pytest.raises(MCPInsecureBindError):
             create_mcp_server(auth_token=None)
@@ -107,9 +107,10 @@ class TestMCPSecurityDefaults:
 
     def test_default_host_is_loopback(self):
         """The config default host must be loopback, not 0.0.0.0."""
+        import inspect
+
         from rigforge.config import MCPConfig
         from rigforge.mcp_server import create_mcp_server
-        import inspect
 
         assert MCPConfig().host == "127.0.0.1"
         # And the factory's own default parameter is loopback too.

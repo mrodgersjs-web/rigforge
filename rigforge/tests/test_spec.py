@@ -7,7 +7,6 @@ import secrets
 from rigforge.proof import GateOutcome, ProofPacket
 from rigforge.spec import Spec, SpecBinding, match_criteria, verify_spec
 
-
 MARKDOWN_SPEC = """# Auth feature
 
 ## Acceptance Criteria

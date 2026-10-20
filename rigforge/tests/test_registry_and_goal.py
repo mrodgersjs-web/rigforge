@@ -300,6 +300,7 @@ class TestGoalHarness:
 class TestCapabilityAndGoalCLI:
     def test_capabilities_cli_lists_from_env_module(self, ctx, monkeypatch, tmp_path):
         from click.testing import CliRunner
+
         from rigforge.cli import main
 
         # Write a plugin module that registers a capability on import.
@@ -328,9 +329,11 @@ class TestCapabilityAndGoalCLI:
         REGISTRY.clear()
 
     def test_goal_cli_converges_and_seals(self, ctx):
-        from click.testing import CliRunner
-        from rigforge.cli import main
         import json as _json
+
+        from click.testing import CliRunner
+
+        from rigforge.cli import main
 
         # Clean shared registry so it doesn't block phase 1.
         from rigforge.registry import REGISTRY
@@ -346,10 +349,11 @@ class TestCapabilityAndGoalCLI:
         assert payload["stop_reason"] == "proven"
 
     def test_goal_cli_fails_when_artifact_missing(self, ctx):
-        from click.testing import CliRunner
-        from rigforge.cli import main
         import json as _json
 
+        from click.testing import CliRunner
+
+        from rigforge.cli import main
         from rigforge.registry import REGISTRY
         REGISTRY.clear()
 

@@ -439,6 +439,7 @@ class TestCockpit:
 class TestVerifyRequireSignature:
     def test_verify_require_signature_passes_when_signed(self, ctx, monkeypatch):
         from click.testing import CliRunner
+
         from rigforge.cli import main
 
         monkeypatch.setenv("RIGFORGE_SIGNING_KEY", "shh")
@@ -461,6 +462,7 @@ class TestVerifyRequireSignature:
 
     def test_verify_require_signature_fails_when_unsigned(self, ctx, monkeypatch):
         from click.testing import CliRunner
+
         from rigforge.cli import main
 
         monkeypatch.delenv("RIGFORGE_SIGNING_KEY", raising=False)
@@ -482,6 +484,7 @@ class TestVerifyRequireSignature:
 class TestResumeCLI:
     def test_resume_nothing_to_do(self, ctx):
         from click.testing import CliRunner
+
         from rigforge.cli import main
 
         runner = CliRunner()
@@ -492,6 +495,7 @@ class TestResumeCLI:
 
     def test_resume_after_failure(self, ctx):
         from click.testing import CliRunner
+
         from rigforge.cli import main
 
         ExecutionLedger(ctx.ledger_file).append(
@@ -523,6 +527,7 @@ class TestGapsClosed:
 
     def test_cli_gaps_all_flag(self):
         from click.testing import CliRunner
+
         from rigforge.cli import main
 
         runner = CliRunner()

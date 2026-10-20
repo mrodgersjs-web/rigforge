@@ -21,13 +21,12 @@ from rigforge.config import EvalLoopConfig
 from rigforge.context import ProjectContext
 from rigforge.evalloop import (
     DeterministicRubric,
-    EvaluatorLoop,
     EvalLoopTranscript,
+    EvaluatorLoop,
     disabled_transcript,
 )
 from rigforge.gates import HARD_BLOCK, GateResult
 from rigforge.harness import ArchonHarness
-
 
 # ── Fixtures ───────────────────────────────────────────────────────────
 

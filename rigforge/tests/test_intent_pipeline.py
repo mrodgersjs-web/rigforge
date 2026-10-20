@@ -14,9 +14,17 @@ from click.testing import CliRunner
 
 from rigforge.commands.forge import forge_cmd
 from rigforge.commands.status import status_cmd
-from rigforge.forge import ForgeResult, forge, main as forge_main
+from rigforge.forge import ForgeResult, forge
+from rigforge.forge import main as forge_main
 from rigforge.intents.intent_parser import Intent, IntentParser
-from rigforge.intents.troika import Tester, Troika, TroikaReport, TroikaResult, Coder, Verifier
+from rigforge.intents.troika import (
+    Coder,
+    Tester,
+    Troika,
+    TroikaReport,
+    TroikaResult,
+    Verifier,
+)
 from rigforge.lattice.router import LatticeRouter
 from rigforge.triple_diamond import (
     CHIEF_BLOCK,
@@ -33,7 +41,6 @@ from rigforge.triple_diamond import (
     mode_from_bms,
     parse_cell_id,
 )
-
 
 # ── lattice model ─────────────────────────────────────────────────────────
 

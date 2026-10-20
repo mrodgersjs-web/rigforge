@@ -343,9 +343,10 @@ class TestKeygenAndPublicVerify:
 
     def test_verify_with_spec_flag(self, runner, project):
         """verify --spec runs spec-bound verification on a spec-sealed proof."""
+        import secrets
+
         from rigforge.proof import GateOutcome, ProofPacket
         from rigforge.spec import Spec, SpecBinding
-        import secrets
 
         _invoke(runner, project, "init")
 
@@ -377,9 +378,10 @@ class TestKeygenAndPublicVerify:
     def test_public_sign_and_verify_roundtrip(self, runner, project):
         """keygen → seal → sign_packet → verify --public-key succeeds; tamper fails."""
         pytest.importorskip("cryptography")
-        from rigforge.public_attest import generate_keypair, sign_packet
-        from rigforge.proof import ProofPacket
         import json as _json
+
+        from rigforge.proof import ProofPacket
+        from rigforge.public_attest import generate_keypair, sign_packet
 
         _invoke(runner, project, "init")
 

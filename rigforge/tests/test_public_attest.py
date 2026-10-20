@@ -8,6 +8,7 @@ Requires: ``pip install rigforge[public]`` (cryptography extra).
 from __future__ import annotations
 
 import json
+
 import pytest
 
 try:
@@ -25,8 +26,8 @@ if HAS_CRYPTOGRAPHY:
         load_private_key,
         load_public_key_hex,
         sign,
-        verify,
         sign_packet,
+        verify,
         verify_packet,
     )
 

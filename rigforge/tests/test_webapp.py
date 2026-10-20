@@ -14,7 +14,6 @@ import pytest
 from rigforge.context import ProjectContext
 from rigforge.ledger import ExecutionLedger
 
-
 pytest.importorskip("fastapi")
 
 
@@ -29,6 +28,7 @@ def ctx(tmp_path: Path) -> ProjectContext:
 
 def _client(ctx, token=None, allow_insecure=True):
     from fastapi.testclient import TestClient
+
     from rigforge.webapp import build_app
 
     return TestClient(build_app(ctx, auth_token=token, allow_insecure=allow_insecure))
@@ -221,6 +221,7 @@ class TestLedgerStream:
 class TestAppBoots:
     def test_build_app_returns_fastapi(self, ctx):
         from fastapi import FastAPI
+
         from rigforge.webapp import build_app
 
         app = build_app(ctx)
