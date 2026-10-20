@@ -37,9 +37,6 @@ from dataclasses import dataclass, field
 from typing import Callable, Literal
 
 from rigforge.gates import (
-    ADVISORY,
-    HARD_BLOCK,
-    SOFT_BLOCK,
     GateResult,
 )
 

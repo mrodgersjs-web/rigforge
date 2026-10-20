@@ -5,6 +5,29 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [1.1.0] - 2026-10-19
 
+Polish wave (2026-10-19, same day):
+
+- This commit removes unused imports and unused local variables in
+  `rigforge/telemetry.py`, `rigforge/tests/test_cli.py`,
+  `rigforge/tests/test_public_attest.py`, `rigforge/benchmark.py`,
+  `rigforge/cli.py`, `rigforge/commands/status.py`, `rigforge/evalloop.py`,
+  `rigforge/lattice/router.py`, `rigforge/public_attest.py`,
+  `rigforge/registry.py`, `rigforge/triple_diamond.py` and four test modules,
+  so `ruff check --isolated` (the full default rule set) passes clean.
+- This commit changes `.github/workflows/ci.yml` and `.github/workflows/smoke.yml`
+  to add `timeout-minutes: 15` to every job and to remove
+  `continue-on-error: true` from the full-rule-set lint step, which is now
+  blocking because it passes.
+- This commit changes the README CI badge to the shields
+  `github/actions/workflow/status` form for `ci.yml` on `main`.
+- This commit adds `rigforge/tests/test_repo_hygiene.py`, which asserts from the
+  files on disk: `.github/CODEOWNERS` contains `* @mrodgersjs-web`;
+  `.github/copilot-instructions.md` is at most 8000 bytes and names a test
+  command; the README carries a `github/actions/workflow/status` badge, the
+  `rodgersintelligence.com` footer, a test command word, and clone examples
+  targeting `mrodgersjs-web/rigforge`; and every workflow job has
+  `timeout-minutes` and no `continue-on-error`.
+
 ### Added
 
 - Tests for the intent-routing subsystem (lattice model, intent parser, lattice

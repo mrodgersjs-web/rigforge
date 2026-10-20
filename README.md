@@ -4,7 +4,7 @@
 
 ![rigforge demo: a forged "BUILD COMPLETE" is caught by the HMAC signature check](docs/rigforge-demo.gif)
 
-[![CI](https://github.com/mrodgersjs-web/rigforge/actions/workflows/ci.yml/badge.svg)](https://github.com/mrodgersjs-web/rigforge/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/mrodgersjs-web/rigforge/ci.yml?branch=main&label=CI)](https://github.com/mrodgersjs-web/rigforge/actions/workflows/ci.yml)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 

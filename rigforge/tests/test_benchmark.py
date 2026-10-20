@@ -10,7 +10,6 @@ to the hang (or to faked numbers) fails loudly instead of hiding.
 
 from __future__ import annotations
 
-import pytest
 
 from rigforge.benchmark import DEFAULT_SEED, _RNG, run_benchmark
 

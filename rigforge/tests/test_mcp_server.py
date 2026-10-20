@@ -1,13 +1,11 @@
 """Tests for RIGForge MCP server."""
 
-import pytest
 from rigforge.mcp_server import (
     contract_create,
     contract_validate,
     contract_list,
     handle_jsonrpc,
     list_tools,
-    phase_status,
     proof_seal,
     seal_and_verify,
 )

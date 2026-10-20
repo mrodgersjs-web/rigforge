@@ -299,7 +299,7 @@ class TestKeygenAndPublicVerify:
 
     def test_keygen_writes_keys(self, runner, tmp_path):
         """keygen --out-dir creates private + public key files; priv is 0o600."""
-        crypto = pytest.importorskip("cryptography")
+        pytest.importorskip("cryptography")
         out_dir = tmp_path / "keys"
         out_dir.mkdir()
         result = _invoke(runner, tmp_path, "keygen", "--out-dir", str(out_dir))

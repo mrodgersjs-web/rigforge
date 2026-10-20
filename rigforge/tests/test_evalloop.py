@@ -13,21 +13,16 @@ sealed into the ProofPacket, and the existing 158-test baseline unchanged.
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
 
-from rigforge.config import RigForgeConfig, EvalLoopConfig
+from rigforge.config import EvalLoopConfig
 from rigforge.context import ProjectContext
 from rigforge.evalloop import (
-    AttemptScore,
-    DEFAULT_MAX_RETRIES,
     DeterministicRubric,
     EvaluatorLoop,
     EvalLoopTranscript,
-    GateLoopRecord,
-    Rubric,
     disabled_transcript,
 )
 from rigforge.gates import HARD_BLOCK, GateResult

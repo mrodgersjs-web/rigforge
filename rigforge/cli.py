@@ -1384,8 +1384,8 @@ def serve(click_ctx: click.Context, host: str | None, port: int | None,
         sys.exit(1)
 
     click.echo(f"🛸  RIGForge full-stack cockpit at http://{bind_host}:{bind_port}/")
-    click.echo(f"    API: /api/status /api/phases /api/verify /api/contracts "
-               f"/api/proof/{{n}} /api/ledger/stream")
+    click.echo("    API: /api/status /api/phases /api/verify /api/contracts "
+               "/api/proof/{n} /api/ledger/stream")
     click.echo(f"    Auth: {'bearer-token required' if token else 'open (local dashboard)'}")
     uvicorn.run(app, host=bind_host, port=bind_port)
 

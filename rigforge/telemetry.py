@@ -117,7 +117,6 @@ def _setup() -> None:
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import (
         BatchSpanProcessor,
-        ConsoleSpanExporter,
     )
 
     resource = Resource.create(
@@ -297,7 +296,7 @@ def emit_run_spans(result: "HarnessResult") -> None:
     """
     if not is_enabled():
         return
-    with root_span(result.phase, result) as span:
+    with root_span(result.phase, result):
         for gate in result.gates:
             with gate_span(gate, result.phase):
                 pass

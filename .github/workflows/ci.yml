@@ -32,6 +32,7 @@ jobs:
   test:
     name: tests (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -69,6 +70,7 @@ jobs:
     # Python-version-dependent.
     name: tests @ COLUMNS=54
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -92,6 +94,7 @@ jobs:
   lint:
     name: ruff
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -111,13 +114,10 @@ jobs:
       - name: Lint (enforced rules)
         run: ruff check rigforge/ contracts/
 
-      # Non-blocking, and honest about it: this reports the full default rule
-      # set, which the codebase does NOT pass yet (~160 stylistic findings).
-      # `continue-on-error` surfaces that as a visible non-green step rather
-      # than hiding it behind `|| true`, which would report a lie as success.
-      - name: Lint (full default rule set — advisory, not enforced)
-        continue-on-error: true
-        run: ruff check --isolated --statistics rigforge/ contracts/
+      # The full default rule set (no pyproject narrowing). Blocking: the
+      # codebase passes it clean, so a regression shows up as a red step.
+      - name: Lint (full default rule set)
+        run: ruff check --isolated rigforge/ contracts/
 
   # NOTE: there is deliberately no type-check job. This repo has no typing
   # configuration -- no mypy/pyright config, no py.typed marker, and no
@@ -129,6 +129,7 @@ jobs:
   build:
     name: build + install wheel
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [test, narrow-terminal, lint]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

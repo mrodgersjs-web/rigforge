@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from rigforge.triple_diamond import _IntentHint
+    pass
 
 
 from rigforge.triple_diamond import (
