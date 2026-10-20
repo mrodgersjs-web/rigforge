@@ -49,7 +49,7 @@ class Spec(BaseModel):
             import yaml
 
             data = yaml.safe_load(text)
-        except Exception:
+        except Exception:  # noqa: BLE001 — pyyaml is optional; any parse failure falls back to prose
             data = None
 
         if isinstance(data, dict) and (data.get("criteria") or data.get("acceptance_criteria")):

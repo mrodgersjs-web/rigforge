@@ -88,10 +88,10 @@ class IntentParser:
         import shlex
         try:
             tokens = shlex.split(text)
-            if len(tokens) > 1:
-                return tokens[-1]
-        except Exception:
-            pass
+        except ValueError:  # unbalanced quotes: no target to extract
+            return ""
+        if len(tokens) > 1:
+            return tokens[-1]
         return ""
 
     def _score_bms(self, intent: Intent) -> float:

@@ -184,7 +184,7 @@ def force_flush(timeout_millis: int = 30000) -> bool:
         return True
     try:
         return bool(_provider.force_flush(timeout_millis))
-    except Exception:
+    except Exception:  # noqa: BLE001 — telemetry must never break a run
         return False
 
 
@@ -283,7 +283,7 @@ def annotate_packet(span: Any, packet: ProofPacket) -> None:
     try:
         span.set_attribute("rigforge.sha256", packet.packet_sha256)
         span.set_attribute("rigforge.status", packet.status)
-    except Exception:  # noqa: BLE001 — telemetry must never break a run
+    except Exception:  # noqa: BLE001, S110 — telemetry must never break a run
         pass
 
 
@@ -324,13 +324,13 @@ class _OtlpJsonConsoleExporter:
             try:
                 sys.stdout.write(json.dumps(_span_to_json(span)) + "\n")
                 sys.stdout.flush()
-            except Exception:  # noqa: BLE001 — never break a run on emit
+            except Exception:  # noqa: BLE001, S110 — never break a run on emit
                 pass
 
     def shutdown(self) -> None:
         try:
             sys.stdout.flush()
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001, S110 — never break a run on shutdown
             pass
 
     def force_flush(self, _timeout_millis: int = 30000) -> bool:

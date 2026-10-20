@@ -109,7 +109,7 @@ def verify(message: bytes, signature: bytes, public_key_hex: str) -> bool:
     try:
         public_key.verify(signature, message)
         return True
-    except Exception:
+    except Exception:  # noqa: BLE001 — verifier must never crash; any failure is a failed verify
         return False
 
 
@@ -186,5 +186,5 @@ def verify_packet(packet, public_key_hex: str | None = None) -> bool:
         public_key = Ed25519PublicKey.from_public_bytes(bytes.fromhex(key_hex))
         public_key.verify(sig_bytes, msg)
         return True
-    except Exception:
+    except Exception:  # noqa: BLE001 — verifier must never crash; any failure is a failed verify
         return False

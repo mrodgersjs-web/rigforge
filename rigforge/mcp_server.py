@@ -75,7 +75,7 @@ def contract_validate(contract: dict[str, Any]) -> dict[str, Any]:
     try:
         dc = DoneContract(**contract)
         return {"valid": True, "sealed": dc.is_sealed(), "contract": dc.to_yaml_dict()}
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — validation boundary: any failure reports invalid
         return {"valid": False, "error": str(e)}
 
 
