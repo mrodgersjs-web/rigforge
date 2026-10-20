@@ -70,8 +70,8 @@ if TYPE_CHECKING:  # pragma: no cover — typing-only
 #: at import time so the hot path is a single boolean check.
 def _probe_otel() -> bool:
     try:
-        import opentelemetry  # noqa: F401
-        import opentelemetry.sdk  # noqa: F401
+        import opentelemetry
+        import opentelemetry.sdk
         import opentelemetry.sdk.trace  # noqa: F401
     except Exception:  # noqa: BLE001 — any import failure = OTel unavailable
         return False
@@ -318,7 +318,7 @@ class _OtlpJsonConsoleExporter:
     (``OTEL_EXPORTER_OTLP_ENDPOINT`` set), this exporter is not used.
     """
 
-    def export(self, spans: Any) -> None:  # noqa: D401 — OTel exporter API
+    def export(self, spans: Any) -> None:  # OTel exporter API signature
         for span in spans:
             try:
                 sys.stdout.write(json.dumps(_span_to_json(span)) + "\n")

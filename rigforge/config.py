@@ -195,7 +195,7 @@ def load_config(ctx: ProjectContext) -> RigForgeConfig:
         raise ValueError(f"{path}: top-level value must be a mapping")
     try:
         return RigForgeConfig(**raw)
-    except Exception as exc:  # noqa: BLE001 — surface as ValueError
+    except Exception as exc:  # any failure surfaces as ValueError
         raise ValueError(f"{path}: invalid rigforge.yaml: {exc}") from exc
 
 
