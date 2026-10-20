@@ -40,7 +40,6 @@ from rigforge.gates import (
     GateResult,
 )
 
-
 # A gate thunk is the same zero-arg callable shape the harness already uses
 # (see ``rigforge.gates.gate_thunks_for_phase``). Keeping the contract
 # identical means the loop can wrap any existing gate without adaptation.

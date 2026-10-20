@@ -18,7 +18,6 @@ from dataclasses import dataclass, field
 
 from rigforge.proof import ArtifactRecord, GateOutcome, ModelMetadata, ProofPacket
 
-
 # ── Model-metadata rendering ──────────────────────────────────────────────
 
 

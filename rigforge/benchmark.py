@@ -57,7 +57,6 @@ from typing import Callable, Literal
 
 from rigforge.proof import ArtifactRecord, GateOutcome, ProofPacket
 
-
 # ── Seeded RNG ──────────────────────────────────────────────────────────────
 
 

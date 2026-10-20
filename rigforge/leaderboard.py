@@ -17,12 +17,17 @@ the same seeded, offline suite the benchmark uses — re-run it and check.
 from __future__ import annotations
 
 import secrets
-
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
-from rigforge.benchmark import DEFAULT_SEED, Scenario, _artifact_bytes, _RNG, build_scenarios
+from rigforge.benchmark import (
+    _RNG,
+    DEFAULT_SEED,
+    Scenario,
+    _artifact_bytes,
+    build_scenarios,
+)
 from rigforge.proof import ArtifactRecord, GateOutcome, ProofPacket
 from rigforge.spec import SpecBinding, verify_spec
 

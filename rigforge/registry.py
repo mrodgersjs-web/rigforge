@@ -37,7 +37,6 @@ from typing import Callable, Iterable
 from rigforge.context import ProjectContext
 from rigforge.gates import ADVISORY, HARD_BLOCK, SOFT_BLOCK, GateResult
 
-
 # A capability is a callable taking the project context and returning a result.
 CapabilityFn = Callable[[ProjectContext], GateResult]
 

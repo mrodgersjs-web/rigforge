@@ -31,6 +31,7 @@ Polish wave (2026-10-19, same day):
 Lint repair wave (2026-10-20):
 
 - This commit sorts the import blocks in the `contracts/` modules and tests that `ruff check --isolated` flagged as unsorted (rule I001); no behavior changes.
+- This commit sorts the import blocks in the top-level `rigforge/` modules flagged unsorted by `ruff check --isolated` (rule I001); no behavior changes.
 
 ### Added
 

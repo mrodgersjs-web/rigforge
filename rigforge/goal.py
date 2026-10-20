@@ -39,7 +39,6 @@ from rigforge.context import ProjectContext
 from rigforge.harness import ArchonHarness, BudgetExceeded, HarnessResult
 from rigforge.proof import ProofPacket
 
-
 # A done-check inspects the project and returns True when the goal is proven.
 DoneCheck = Callable[[ProjectContext], bool]
 

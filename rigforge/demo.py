@@ -37,7 +37,6 @@ from tempfile import TemporaryDirectory
 
 from rigforge.proof import ArtifactRecord, GateOutcome, ProofPacket
 
-
 HONEST_ARTIFACT = b"build/app.bin :: v1.0.0 :: status=GREEN :: 42 tests passed\n"
 TAMPERED_ARTIFACT = b"build/app.bin :: v1.0.0 :: status=GREEN :: 0 tests passed (BACKDOOR)\n"
 

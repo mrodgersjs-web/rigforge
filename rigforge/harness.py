@@ -15,8 +15,8 @@ from typing import TYPE_CHECKING
 
 from rigforge.context import ProjectContext
 from rigforge.evalloop import (
-    EvaluatorLoop,
     EvalLoopTranscript,
+    EvaluatorLoop,
     disabled_transcript,
 )
 
@@ -29,10 +29,9 @@ from rigforge.gates import (
     gates_for_phase,
 )
 from rigforge.ledger import ExecutionLedger
-from rigforge.spec import SpecBinding
 from rigforge.proof import ArtifactRecord, GateOutcome, ProofPacket
 from rigforge.run_envelope import RunEnvelope
-
+from rigforge.spec import SpecBinding
 
 PHASES: dict[int, str] = {
     1: "Bootstrap & Doctrine",

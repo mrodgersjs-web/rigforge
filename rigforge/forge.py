@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 import sys
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from typing import Optional
 
 from rigforge.intents.intent_parser import IntentParser

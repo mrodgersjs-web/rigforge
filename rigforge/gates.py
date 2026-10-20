@@ -12,10 +12,9 @@ from __future__ import annotations
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
 from rigforge.context import ProjectContext
-
 
 HARD_BLOCK = "hard_block"
 SOFT_BLOCK = "soft_block"

@@ -34,10 +34,11 @@ import click
 
 import rigforge
 from rigforge.context import ProjectContext
-from rigforge.gaps import GAPS, RESOLVED_GAPS, as_dicts as gaps_as_dicts, resolved_as_dicts
+from rigforge.gaps import GAPS, RESOLVED_GAPS, resolved_as_dicts
+from rigforge.gaps import as_dicts as gaps_as_dicts
 from rigforge.gates import (
-    GateResult,
     HARD_BLOCK,
+    GateResult,
     gate_ci_workflow,
     gate_config_valid,
     gate_contract_schema,
@@ -46,19 +47,23 @@ from rigforge.gates import (
     gate_repo_layout,
     gate_ruff,
 )
-from rigforge.harness import ArchonHarness, PHASES
+from rigforge.harness import PHASES, ArchonHarness
 from rigforge.ledger import ExecutionLedger
 from rigforge.proof import ProofPacket
+from rigforge.questions import QUESTIONS
+from rigforge.questions import as_dicts as questions_as_dicts
 from rigforge.telemetry import (
     annotate_packet,
     emit_run_spans,
     force_flush,
-    enable as enable_telemetry,
-    is_enabled as telemetry_is_enabled,
     root_span,
 )
-from rigforge.questions import QUESTIONS, as_dicts as questions_as_dicts
-
+from rigforge.telemetry import (
+    enable as enable_telemetry,
+)
+from rigforge.telemetry import (
+    is_enabled as telemetry_is_enabled,
+)
 
 CI_WORKFLOW_TEMPLATE = "ci-workflow.yml"
 
@@ -1369,8 +1374,8 @@ def serve(click_ctx: click.Context, host: str | None, port: int | None,
     token = auth_token if auth_token is not None else cfg.resolve_mcp_token(ctx.root)
 
     try:
-        from rigforge.webapp import build_app
         from rigforge.mcp_server import MCPInsecureBindError
+        from rigforge.webapp import build_app
 
         try:
             app = build_app(ctx, auth_token=token, allow_insecure=not require_auth)
@@ -1437,7 +1442,7 @@ def mcp_serve(click_ctx: click.Context, host: str | None, port: int | None,
     if token:
         click.echo("   Auth: bearer-token required (G003)")
     try:
-        from rigforge.mcp_server import create_mcp_server, MCPInsecureBindError
+        from rigforge.mcp_server import MCPInsecureBindError, create_mcp_server
 
         try:
             server = create_mcp_server(

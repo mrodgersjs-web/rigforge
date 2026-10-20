@@ -27,7 +27,6 @@ from pydantic import BaseModel, Field, field_validator
 
 from rigforge.context import ProjectContext
 
-
 CONFIG_SCHEMA_VERSION = "1.1.0"
 
 # Conventional location for the auto-generated per-project signing key (G006).

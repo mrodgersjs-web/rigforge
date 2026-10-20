@@ -28,7 +28,6 @@ from pydantic import BaseModel, Field
 from rigforge.run_envelope import RunEnvelope
 from rigforge.spec import SpecBinding
 
-
 PROOF_SCHEMA_VERSION = "1.2.0"
 
 # Determinism honesty qualifier (G012).

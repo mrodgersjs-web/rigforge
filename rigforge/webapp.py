@@ -27,10 +27,9 @@ from pathlib import Path
 from typing import Any
 
 from rigforge.context import ProjectContext
-from rigforge.harness import ArchonHarness, PHASES
+from rigforge.harness import PHASES, ArchonHarness
 from rigforge.ledger import ExecutionLedger
 from rigforge.proof import ProofPacket
-
 
 WEB_DIR = Path(__file__).parent / "web"
 
