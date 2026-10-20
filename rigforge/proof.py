@@ -79,7 +79,7 @@ class ArtifactRecord(BaseModel):
     @classmethod
     def from_path(
         cls, path: Path, base: Path | None = None, *, kind: StepKind = "deterministic"
-    ) -> "ArtifactRecord":
+    ) -> ArtifactRecord:
         """Build a record by hashing the file on disk."""
         rel = str(path.relative_to(base)) if base is not None and path.is_absolute() else str(path)
         if not path.exists():
@@ -181,7 +181,7 @@ class ProofPacket(BaseModel):
     def compute_hash(self) -> str:
         return hashlib.sha256(self._payload_for_hash()).hexdigest()
 
-    def sealed(self, signing_key: bytes | None = None) -> "ProofPacket":
+    def sealed(self, signing_key: bytes | None = None) -> ProofPacket:
         """Return a copy with ``packet_sha256`` (and signature, if a key is
         supplied) populated."""
         update: dict = {"packet_sha256": self.compute_hash()}
@@ -215,7 +215,7 @@ class ProofPacket(BaseModel):
         return path
 
     @classmethod
-    def load(cls, path: Path) -> "ProofPacket":
+    def load(cls, path: Path) -> ProofPacket:
         """Load a packet from disk. Tolerates the v0 legacy shape."""
         raw = json.loads(Path(path).read_text())
         if "schema_version" not in raw:

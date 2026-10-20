@@ -39,7 +39,7 @@ class TestGateTimeout:
         """A runner that never returns must surface as a RED gate via the
         subprocess timeout. Pre-fix ``gate_pytest`` passed no ``timeout=`` to
         ``subprocess.run`` — this test would hang forever (i.e. fail)."""
-        import rigforge.gates as gates
+        from rigforge import gates
 
         # Pretend the runner is present, and make the gate shell out to a
         # genuinely blocking command with a tiny timeout.
@@ -61,7 +61,7 @@ class TestGateTimeout:
 
     def test_timeout_is_passed_to_subprocess(self, ctx, monkeypatch):
         """The fix must actually plumb a ``timeout`` kwarg into subprocess.run."""
-        import rigforge.gates as gates
+        from rigforge import gates
 
         monkeypatch.setattr(gates.shutil, "which", lambda _name: "/usr/bin/pytest")
         monkeypatch.setattr(gates, "_gate_timeout_seconds", lambda _ctx: 7)
@@ -236,7 +236,7 @@ class TestPytestAbsentBlocks:
     def test_missing_pytest_is_hard_block(self, ctx, monkeypatch):
         """A missing test runner must block a seal (RED/HARD_BLOCK), not be
         waved through as a SOFT_BLOCK."""
-        import rigforge.gates as gates
+        from rigforge import gates
 
         monkeypatch.setattr(gates.shutil, "which", lambda _name: None)
         result = gates.gate_pytest(ctx)

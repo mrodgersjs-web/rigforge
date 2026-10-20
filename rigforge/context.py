@@ -63,7 +63,7 @@ class ProjectContext:
     # ── Discovery ───────────────────────────────────────────────────────
 
     @classmethod
-    def discover(cls, start: Path | str | None = None) -> "ProjectContext":
+    def discover(cls, start: Path | str | None = None) -> ProjectContext:
         """Walk upward from ``start`` looking for a project marker.
 
         If no marker is found, falls back to ``start`` itself (resolved).

@@ -8,7 +8,6 @@ from __future__ import annotations
 import json
 import sys
 from dataclasses import asdict, dataclass
-from typing import Optional
 
 from rigforge.intents.intent_parser import IntentParser
 from rigforge.intents.troika import Troika, TroikaReport
@@ -24,7 +23,7 @@ class ForgeResult:
     tools: list[str]
     troika_ok: bool
     troika_passed: int
-    artifact: Optional[str] = None
+    artifact: str | None = None
     proof_hash: str = ""
 
     def as_dict(self) -> dict:
@@ -35,7 +34,7 @@ def forge(
     intent: str,
     *,
     dry_run: bool = False,
-    context: Optional[dict] = None,
+    context: dict | None = None,
 ) -> ForgeResult:
     """
     Execute a natural-language intent through the RIG lattice + troika.
@@ -55,7 +54,7 @@ def forge(
     route = router.route(intent)
     parsed = parser.parse(intent)
 
-    troika_report: Optional[TroikaReport] = None
+    troika_report: TroikaReport | None = None
     if not dry_run:
         troika = Troika()
         troika_report = troika.run(intent, context or {})

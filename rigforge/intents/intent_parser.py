@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Optional
 
 from rigforge.triple_diamond import Cell, mode_from_bms
 
@@ -19,7 +18,7 @@ class Intent:
     target: str = ""
     constraints: dict = field(default_factory=dict)
     bms_score: float = 0.20
-    cell: Optional[Cell] = None
+    cell: Cell | None = None
 
     def archetype(self) -> str:
         m = mode_from_bms(self.bms_score)
@@ -27,19 +26,19 @@ class Intent:
 
 
 _ACTION_PATTERNS = [
-    (re.compile(r"\bbuild\b", re.I), "build"),
-    (re.compile(r"\bdeploy\b", re.I), "deploy"),
-    (re.compile(r"\bscaffold\b", re.I), "scaffold"),
-    (re.compile(r"\bresearch\b", re.I), "research"),
-    (re.compile(r"\bverify\b", re.I), "verify"),
-    (re.compile(r"\btest\b", re.I), "test"),
-    (re.compile(r"\bfix\b", re.I), "fix"),
-    (re.compile(r"\broute\b", re.I), "route"),
-    (re.compile(r"\bswarm\b", re.I), "swarm"),
-    (re.compile(r"\bdeviate\b", re.I), "deviate"),
-    (re.compile(r"\bseal\b", re.I), "seal"),
-    (re.compile(r"\brun\b", re.I), "run"),
-    (re.compile(r"\binspect\b", re.I), "inspect"),
+    (re.compile(r"\bbuild\b", re.IGNORECASE), "build"),
+    (re.compile(r"\bdeploy\b", re.IGNORECASE), "deploy"),
+    (re.compile(r"\bscaffold\b", re.IGNORECASE), "scaffold"),
+    (re.compile(r"\bresearch\b", re.IGNORECASE), "research"),
+    (re.compile(r"\bverify\b", re.IGNORECASE), "verify"),
+    (re.compile(r"\btest\b", re.IGNORECASE), "test"),
+    (re.compile(r"\bfix\b", re.IGNORECASE), "fix"),
+    (re.compile(r"\broute\b", re.IGNORECASE), "route"),
+    (re.compile(r"\bswarm\b", re.IGNORECASE), "swarm"),
+    (re.compile(r"\bdeviate\b", re.IGNORECASE), "deviate"),
+    (re.compile(r"\bseal\b", re.IGNORECASE), "seal"),
+    (re.compile(r"\brun\b", re.IGNORECASE), "run"),
+    (re.compile(r"\binspect\b", re.IGNORECASE), "inspect"),
 ]
 
 

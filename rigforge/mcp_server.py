@@ -20,9 +20,10 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import IO, Any, Callable
+from typing import IO, Any
 
 # ── Tool definitions ───────────────────────────────────────────────────
 

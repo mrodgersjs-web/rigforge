@@ -49,17 +49,16 @@ class ExecutionLedger:
         record.update(fields)
         line = json.dumps(record, sort_keys=True) + "\n"
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with _APPEND_LOCK:
-            with self.path.open("a", encoding="utf-8") as fh:
+        with _APPEND_LOCK, self.path.open("a", encoding="utf-8") as fh:
+            if fcntl is not None:
+                fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+            try:
+                fh.write(line)
+                fh.flush()
+                os.fsync(fh.fileno())
+            finally:
                 if fcntl is not None:
-                    fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
-                try:
-                    fh.write(line)
-                    fh.flush()
-                    os.fsync(fh.fileno())
-                finally:
-                    if fcntl is not None:
-                        fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+                    fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
         return record
 
     def read(self, *, kind: str | None = None, limit: int | None = None) -> list[dict]:

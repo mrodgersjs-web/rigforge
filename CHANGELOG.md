@@ -35,6 +35,7 @@ Lint repair wave (2026-10-20):
 - This commit sorts the import blocks in the `rigforge/tests/` modules flagged unsorted by `ruff check --isolated` (rule I001); no behavior changes.
 - This commit sorts the import blocks in the `rigforge/lattice/` and `rigforge/commands/` modules flagged unsorted by `ruff check --isolated` (rule I001); no behavior changes.
 - This commit removes the four `# noqa` markers that `ruff check --isolated` reported as unused (rule RUF100), keeping a marker's reason text as a plain comment where it had one.
+- This commit applies ruff's remaining safe autofixes under the default rule set (UP035, UP037, UP045, FURB167, RUF022, PLR0402, TC005, SIM117, PLR1711, RET501); annotation and style modernization only, no behavior changes.
 
 ### Added
 

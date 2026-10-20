@@ -4,11 +4,6 @@ Lattice router: intent → cell mapping.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
-
-if TYPE_CHECKING:
-    pass
-
 
 from rigforge.triple_diamond import (
     CHIEF_BLOCK,
@@ -28,7 +23,7 @@ class RouteResult:
     bms_score: float
     archetype_hint: str
     tools_enabled: list[str]
-    mcp_hint: Optional[str] = None
+    mcp_hint: str | None = None
     evidence_required: bool = True
     confidence: str = "high"
 
@@ -108,7 +103,7 @@ _ARCHETYPE_TOOLS: dict[str, list[str]] = {
 }
 
 
-_MCP_HINTS: dict[str, Optional[str]] = {
+_MCP_HINTS: dict[str, str | None] = {
     "A1": "codex",
     "A2": "github_mcp",
     "A3": "supabase_mcp",

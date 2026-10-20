@@ -55,8 +55,9 @@ from __future__ import annotations
 import json
 import os
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Iterator
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:  # pragma: no cover — typing-only
     from rigforge.gates import GateResult
@@ -190,7 +191,7 @@ def force_flush(timeout_millis: int = 30000) -> bool:
 # ── Attribute builders ──────────────────────────────────────────────────
 
 
-def _gate_attributes(gate: "GateResult", phase: int) -> dict[str, Any]:
+def _gate_attributes(gate: GateResult, phase: int) -> dict[str, Any]:
     """Build the OTel attribute dict for a single gate (pipeline step).
 
     Deterministic gates carry only the deterministic flag; stochastic steps
@@ -223,7 +224,7 @@ def _gate_attributes(gate: "GateResult", phase: int) -> dict[str, Any]:
     return attrs
 
 
-def _root_attributes(phase: int, result: "HarnessResult | None" = None) -> dict[str, Any]:
+def _root_attributes(phase: int, result: HarnessResult | None = None) -> dict[str, Any]:
     attrs: dict[str, Any] = {
         "rigforge.phase": phase,
         "rigforge.deterministic": True,
@@ -239,7 +240,7 @@ def _root_attributes(phase: int, result: "HarnessResult | None" = None) -> dict[
 
 
 @contextmanager
-def root_span(phase: int, result: "HarnessResult | None" = None) -> Iterator[Any]:
+def root_span(phase: int, result: HarnessResult | None = None) -> Iterator[Any]:
     """Open the root span for a phase run (the ProofPacket span).
 
     Yields the live span when OTel is active, or ``None`` when it's a no-op.
@@ -256,7 +257,7 @@ def root_span(phase: int, result: "HarnessResult | None" = None) -> Iterator[Any
 
 
 @contextmanager
-def gate_span(gate: "GateResult", phase: int) -> Iterator[Any]:
+def gate_span(gate: GateResult, phase: int) -> Iterator[Any]:
     """Open a child span for a single gate (pipeline step).
 
     No-op when OTel is inactive. The span name is the gate name so it reads
@@ -271,7 +272,7 @@ def gate_span(gate: "GateResult", phase: int) -> Iterator[Any]:
         yield span
 
 
-def annotate_packet(span: Any, packet: "ProofPacket") -> None:
+def annotate_packet(span: Any, packet: ProofPacket) -> None:
     """Attach the sealed packet hash + status to the root span.
 
     Called after :meth:`ArchonHarness.seal` so the root span carries the
@@ -286,7 +287,7 @@ def annotate_packet(span: Any, packet: "ProofPacket") -> None:
         pass
 
 
-def emit_run_spans(result: "HarnessResult") -> None:
+def emit_run_spans(result: HarnessResult) -> None:
     """Emit a complete root + per-gate span tree from a finished :class:`HarnessResult`.
 
     This is the synchronous, post-hoc path used by the ``trace`` command and the
@@ -325,7 +326,6 @@ class _OtlpJsonConsoleExporter:
                 sys.stdout.flush()
             except Exception:  # noqa: BLE001 — never break a run on emit
                 pass
-        return None
 
     def shutdown(self) -> None:
         try:

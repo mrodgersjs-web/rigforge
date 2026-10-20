@@ -33,8 +33,9 @@ Design constraints (RIG build doctrine):
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Literal
+from typing import Literal
 
 from rigforge.gates import (
     GateResult,

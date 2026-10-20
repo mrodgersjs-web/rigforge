@@ -19,11 +19,11 @@ from contracts.v1.models.required_artifact import RequiredArtifact
 from contracts.v1.models.verifier_package import VerifierPackage
 
 __all__ = [
-    "DoneContract",
-    "VerifierPackage",
-    "RequiredArtifact",
     "AcceptanceCriterion",
+    "DoneContract",
     "ForbiddenAction",
+    "RequiredArtifact",
+    "VerifierPackage",
 ]
 
 __version__ = "1.0.0"

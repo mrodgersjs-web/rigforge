@@ -31,9 +31,9 @@ DoneContract and the proof stay bound to the same evidence.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
 
 from rigforge.context import ProjectContext
 from rigforge.harness import ArchonHarness, BudgetExceeded, HarnessResult

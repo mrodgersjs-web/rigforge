@@ -127,7 +127,7 @@ class ArchonHarness:
         ledger: ExecutionLedger | None = None,
         *,
         config: RigForgeConfig | None = None,
-        registry: "CapabilityRegistry | None" = None,
+        registry: CapabilityRegistry | None = None,
     ):
         self.ctx = ctx
         self.ledger = ledger or ExecutionLedger(ctx.ledger_file)
@@ -149,7 +149,7 @@ class ArchonHarness:
 
         # Explicit None check: an empty CapabilityRegistry is falsy via __len__,
         # so ``registry or REGISTRY`` would silently discard an injected empty one.
-        self.registry: "CapabilityRegistry" = REGISTRY if registry is None else registry
+        self.registry: CapabilityRegistry = REGISTRY if registry is None else registry
 
     # ── Planning ───────────────────────────────────────────────────────
 
@@ -381,7 +381,7 @@ class ArchonHarness:
         gates: list[GateResult] | None = None,
         envelope: RunEnvelope | None = None,
         eval_loop: EvalLoopTranscript | None = None,
-        spec: "SpecBinding | None" = None,
+        spec: SpecBinding | None = None,
     ) -> ProofPacket:
         artifact_records = [
             ArtifactRecord.from_path(Path(a), base=self.ctx.root) for a in (artifacts or [])

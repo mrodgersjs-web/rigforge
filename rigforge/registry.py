@@ -31,8 +31,8 @@ from __future__ import annotations
 
 import importlib
 import os
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Callable, Iterable
 
 from rigforge.context import ProjectContext
 from rigforge.gates import ADVISORY, HARD_BLOCK, SOFT_BLOCK, GateResult

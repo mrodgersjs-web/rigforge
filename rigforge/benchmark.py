@@ -50,10 +50,11 @@ import hashlib
 import hmac
 import secrets
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Callable, Literal
+from typing import Literal
 
 from rigforge.proof import ArtifactRecord, GateOutcome, ProofPacket
 

@@ -20,16 +20,16 @@ from rigforge.triple_diamond import (
 
 __all__ = [
     "CHIEF_BLOCK",
+    "LATTICE",
     "Cell",
     "Diamond",
-    "Level",
     "LatticeConfig",
     "LatticeRouter",
-    "LATTICE",
+    "Level",
     "Mode",
-    "parse_cell_id",
     "RouteResult",
     "Step",
     "i1",
     "l3d2a4",
+    "parse_cell_id",
 ]

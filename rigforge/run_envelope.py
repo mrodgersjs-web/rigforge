@@ -123,7 +123,7 @@ class RunEnvelope(BaseModel):
         description="Identity of the verifier (agent name, human handle, or CI job).",
     )
 
-    def finish(self) -> "RunEnvelope":
+    def finish(self) -> RunEnvelope:
         """Return a copy with ``finished_at`` set to now."""
         return self.model_copy(update={"finished_at": datetime.now(timezone.utc)})
 

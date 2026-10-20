@@ -42,7 +42,7 @@ class Spec(BaseModel):
     source_sha256: str = ""
 
     @classmethod
-    def from_text(cls, text: str, *, spec_id: str | None = None) -> "Spec":
+    def from_text(cls, text: str, *, spec_id: str | None = None) -> Spec:
         sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
         data: Any = None
         try:
@@ -62,7 +62,7 @@ class Spec(BaseModel):
         return cls(spec_id=sid, criteria=criteria, source_sha256=sha)
 
     @classmethod
-    def from_file(cls, path: Path | str) -> "Spec":
+    def from_file(cls, path: Path | str) -> Spec:
         p = Path(path)
         return cls.from_text(p.read_text(encoding="utf-8"), spec_id=p.stem)
 
@@ -75,7 +75,7 @@ class SpecBinding(BaseModel):
     criteria: list[str] = Field(default_factory=list)
 
     @classmethod
-    def of(cls, spec: Spec) -> "SpecBinding":
+    def of(cls, spec: Spec) -> SpecBinding:
         return cls(
             spec_id=spec.spec_id, spec_sha256=spec.source_sha256, criteria=list(spec.criteria)
         )

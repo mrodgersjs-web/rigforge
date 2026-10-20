@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -75,7 +74,7 @@ class Troika:
         self.verifier = Verifier()
         self.tester = Tester()
 
-    def run(self, task: str, context: Optional[dict] = None) -> TroikaReport:
+    def run(self, task: str, context: dict | None = None) -> TroikaReport:
         ctx = context or {}
         r1 = self.coder.execute(task, ctx)
         r2 = self.verifier.execute(task, ctx)
