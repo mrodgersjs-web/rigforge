@@ -61,9 +61,8 @@ dev = [
     "cryptography>=42.0,<44.0",
     # Required to run the FULL suite. rigforge/tests/test_webapp.py,
     # test_followups.py and test_hardening.py drive the cockpit API through
-    # fastapi.TestClient, which is backed by httpx. Without these, 9 tests
-    # importorskip themselves and `pytest` reports 221 passed / 9 skipped
-    # instead of 252 passed -- a green run that silently covers less.
+    # fastapi.TestClient, which is backed by httpx. Without these they
+    # importorskip themselves and a green run silently covers less.
     # These are test-time only; they do not add a runtime dependency and the
     # tests stay fully in-process (no socket is ever opened).
     "fastapi>=0.110,<1.0",
