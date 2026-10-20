@@ -74,7 +74,7 @@ inputs:
 
   python-version:
     description: >
-      Python version to set up.  Must satisfy rigforge's >=3.11 requirement.
+      Python version to set up.  Must satisfy rigforge's >=3.10 requirement.
     required: false
     default: "3.13"
 

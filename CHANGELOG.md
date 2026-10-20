@@ -33,12 +33,14 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   description, `requires-python >=3.10` with the 3.10 classifier and ruff
   `target-version = "py310"`, and `cryptography` added to the `dev` extra so the
   public-attestation tests run instead of skipping.
+- The `python_version` hard gate now defaults to 3.10, matching the advertised
+  floor in `pyproject.toml` and the CI matrix (it enforced 3.11).
 - CI: the test matrix covers Python 3.10 to 3.13 and runs pytest with coverage;
   the smoke workflow runs the full test suite before `scripts/smoke.sh`.
 
 ### Fixed
 
-- README claimed "252 passing"; the measured result on this version is 306
+- README claimed "252 passing"; the measured result on this version is 320
   passed, 0 skipped, with 84% package coverage (test files excluded).
 - Stale test-count comments in `pyproject.toml` and `.github/workflows/ci.yml`.
 

@@ -23,7 +23,7 @@ Every row is a command you can run yourself. Results measured 2026-10-19 on a fr
 | A forged "done" is caught | `rigforge demo` | exits 0; the re-forged hash passes naive integrity and fails the HMAC check |
 | No forgery passes | `rigforge benchmark` | 8/8 forgeries caught, 0/8 honest claims blocked, accuracy 1.00 (16 scenarios, fixed seed) |
 | Signing is what catches them | `rigforge benchmark --leaderboard` | naive integrity 0% (0/12), signed 67% (8/12), spec-bound 100% (12/12) |
-| The suite passes offline | `pytest -q` | 306 passed, 0 skipped |
+| The suite passes offline | `pytest -q` | 320 passed, 0 skipped |
 | Package coverage | `pytest -q --cov=rigforge --cov=contracts` | 84% (test files excluded) |
 | Smoke path | `bash scripts/smoke.sh` | `rigforge smoke PASS` |
 
@@ -96,7 +96,7 @@ Work flows through 7 phases; each runs deterministic quality gates and, on succe
 
 ```bash
 pip install -e '.[dev]'    # the dev extra installs everything the full suite needs
-pytest -q                  # 306 passed, 0 skipped (measured 2026-10-19)
+pytest -q                  # 320 passed, 0 skipped (measured 2026-10-19)
 ruff check .
 ```
 

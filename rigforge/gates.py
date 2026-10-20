@@ -59,7 +59,8 @@ class GateResult:
 # ── Built-in gates ─────────────────────────────────────────────────────
 
 
-def gate_python_version(min_major: int = 3, min_minor: int = 11) -> GateResult:
+def gate_python_version(min_major: int = 3, min_minor: int = 10) -> GateResult:
+    # Default floor matches requires-python in pyproject.toml and the CI matrix.
     ok = sys.version_info >= (min_major, min_minor)
     return GateResult(
         name="python_version",

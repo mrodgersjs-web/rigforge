@@ -207,9 +207,10 @@ class TestLedger:
 
 class TestGates:
     def test_python_version_passes(self):
-        g = gate_python_version(3, 11)
+        g = gate_python_version(3, 10)  # the advertised floor
         assert g.passed is True
         assert g.severity == HARD_BLOCK
+        assert gate_python_version(3, 99).passed is False
 
     def test_repo_layout(self, ctx):
         g = gate_repo_layout(ctx)

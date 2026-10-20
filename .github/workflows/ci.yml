@@ -54,7 +54,7 @@ jobs:
 
       # The `dev` extra installs everything the full suite needs (fastapi +
       # httpx for the cockpit tests, cryptography for the public-attestation
-      # tests), so nothing import-skips: 306 tests run, 0 skip.
+      # tests), so nothing import-skips: 320 tests run, 0 skip.
       - name: Run test suite with coverage
         run: pytest -q --cov=rigforge --cov=contracts
 
