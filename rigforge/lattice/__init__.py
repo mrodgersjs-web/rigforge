@@ -3,20 +3,20 @@ RIG Lattice — lattice router, archetypes, and 3-D cell mesh.
 """
 from __future__ import annotations
 
+from rigforge.lattice.router import LatticeRouter, RouteResult
 from rigforge.triple_diamond import (
     CHIEF_BLOCK,
+    LATTICE,
     Cell,
     Diamond,
-    Level,
     LatticeConfig,
+    Level,
     Mode,
     Step,
-    LATTICE,
-    parse_cell_id,
     i1,
     l3d2a4,
+    parse_cell_id,
 )
-from rigforge.lattice.router import RouteResult, LatticeRouter
 
 __all__ = [
     "CHIEF_BLOCK",

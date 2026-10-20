@@ -9,8 +9,8 @@ import click
 @click.pass_context
 def status_cmd(ctx: click.Context, cell_id: str | None):
     """Show RIG Forge status — phase, lattice, contracts."""
-    from rigforge.triple_diamond import LATTICE
     from rigforge.lattice.router import LatticeRouter
+    from rigforge.triple_diamond import LATTICE
 
     if cell_id:
         c = LATTICE.get(cell_id)

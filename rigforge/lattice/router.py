@@ -11,13 +11,13 @@ if TYPE_CHECKING:
 
 
 from rigforge.triple_diamond import (
+    CHIEF_BLOCK,
+    LATTICE,
     Cell,
     Diamond,
     Level,
     Mode,
     Step,
-    LATTICE,
-    CHIEF_BLOCK,
 )
 
 
