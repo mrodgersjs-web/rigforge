@@ -1,373 +1,119 @@
-# RIGForge
+# rigforge
 
-### Don't trust your agents. Prove them.
-**Outcome:** `rigforge demo` catches a forged "BUILD COMPLETE" in 5 seconds — naive integrity check PASSES but the HMAC-SHA256 signature check FAILS, detecting the tamper across 5 attack scenarios in the offline benchmark.
+> Catches AI coding agents when they say work is done but it is not.
 
+![rigforge demo: a forged "BUILD COMPLETE" is caught by the HMAC signature check](docs/rigforge-demo.gif)
 
-**RIGForge catches your AI coding agent when it lies about "done."** When an agent
-says `BUILD COMPLETE ✅`, you have its word and nothing behind it. RIGForge replaces
-the word with a cryptographically signed `ProofPacket` — so "the build passed" becomes
-something you re-verify with one command, not a message in a chat thread.
-
-![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 [![CI](https://github.com/mrodgersjs-web/rigforge/actions/workflows/ci.yml/badge.svg)](https://github.com/mrodgersjs-web/rigforge/actions/workflows/ci.yml)
-![Works with](https://img.shields.io/badge/works%20with-Claude%20Code%20·%20Codex%20·%20Cursor-8A2BE2.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 
-<p align="center">
-  <img src="docs/rigforge-demo.gif" alt="rigforge demo — RIGForge catches a forged 'BUILD COMPLETE' by failing the HMAC signature check" width="720">
-</p>
+For teams that let AI coding agents write code. An agent's "done" becomes a signed record you re-check with one command, not a message in a chat thread.
 
----
+## Why this exists
 
-## See it catch a lie in 5 seconds
+AI coding agents are fast and confident, and they report success they did not earn. A "done" in a terminal cannot be audited: nothing behind it shows what ran, or that nothing changed afterwards. rigforge seals finished work into a `ProofPacket` (a signed record of what a build did): every artifact is hashed, the packet is HMAC-signed, and verification re-checks both. Tamper the result and the signature fails.
+
+## What it proves
+
+Every row is a command you can run yourself. Results measured 2026-10-19 on a fresh `pip install -e '.[dev]'`:
+
+| Check | Command | Measured result |
+| :-- | :-- | :-- |
+| A forged "done" is caught | `rigforge demo` | exits 0; the re-forged hash passes naive integrity and fails the HMAC check |
+| No forgery passes | `rigforge benchmark` | 8/8 forgeries caught, 0/8 honest claims blocked, accuracy 1.00 (16 scenarios, fixed seed) |
+| Signing is what catches them | `rigforge benchmark --leaderboard` | naive integrity 0% (0/12), signed 67% (8/12), spec-bound 100% (12/12) |
+| The suite passes offline | `pytest -q` | 306 passed, 0 skipped |
+| Package coverage | `pytest -q --cov=rigforge --cov=contracts` | 84% (test files excluded) |
+| Smoke path | `bash scripts/smoke.sh` | `rigforge smoke PASS` |
+
+If a check cannot fail, it is theater.
+
+## Quickstart
 
 ```bash
-pip install -e .   # then:
+git clone https://github.com/mrodgersjs-web/rigforge.git && cd rigforge
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e .
 rigforge demo
 ```
 
-Output (real — the tamper detection is computed by the same crypto the platform uses):
+The demo forges a `BUILD COMPLETE` claim, lets the tamper re-forge the packet hash, and shows the signature check catching the lie.
 
-```
-╭───────────────────────────────────────────╮
-│  RIGForge  ·  Live Tamper-Detection Demo  │
-╰───────────────────────────────────────────╯
+## Usage
 
-1 · the claim     An AI agent reports:  BUILD COMPLETE ✅
+The smallest real integration is [`examples/verify_agent_done.py`](examples/verify_agent_done.py), runnable with `python examples/verify_agent_done.py`:
 
-2 · RIGForge seals a signed ProofPacket
-      packet sha256   7def637005db987daeb020992dd36ef1…
-      hmac signature  8c80ed299a6298e22e60893af036f4f2…
-      integrity       ✔ valid
-      signature       ✔ valid
+```python
+from rigforge.proof import ArtifactRecord, GateOutcome, ProofPacket
 
-3 · the tamper    The artifact is TAMPERED and the packet hash is
-                  re-forged to hide it. Naive integrity now PASSES —
-                  the lie looks clean.
+packet = ProofPacket(
+    phase=1, name="Agent build", verifier="my-agent@example",
+    evidence="Agent reported BUILD COMPLETE.",
+    artifacts=[ArtifactRecord.from_path(artifact, base=base)],
+    gates=[GateOutcome(name="tests", passed=True, detail="agent: 100% green")],
+).sealed(signing_key=key)   # the key stays with you, never with the agent
 
-4 · RIGForge verify
-      naive integrity check  PASS  — fooled by the re-forged hash
-      hmac signature check   FAIL  — signature does not verify
-
-   🚨 FORGED. Signature invalid. The agent lied.
+ok = packet.verify_integrity() and packet.verify_signature(key)
 ```
 
-Nothing in that demo is scripted. Every hash, signature, and verdict is computed by the
-**same code path** that seals and verifies real work. Swap the narration for your own
-`assert`s — the cryptographic outcome doesn't change. The forged seal gets caught because
-the HMAC was bound to the *original* artifact hash, and the attacker never had the signing key.
-
-## The problem
-
-AI coding agents are fast and confident — and that's exactly the risk. They report success
-they didn't earn, skip the gate that would've caught the failure, and leave no trail to prove
-what actually ran. A "✅ done" in your terminal is unfalsifiable. You can't audit a vibe.
-
-RIGForge makes agent output **provable**:
-
-- Work seals a `ProofPacket` that SHA-256-hashes every artifact and records the exact run environment.
-- The packet is HMAC-SHA256 **signed** — tamper the result and re-forge the hash, the signature still fails.
-- Verification is a command: `rigforge verify --strict --require-signature`. Pass = a signed, re-checkable artifact. Not a message in a thread.
-
-## 90-second quickstart
-
-```bash
-git clone https://github.com/mrodgersjs-web/rigforge.git
-cd rigforge
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e .
-
-rigforge demo                    # watch it catch a forged "done"
-rigforge init                    # scaffold proofs/, contracts/, ledger/, rigforge.yaml
-rigforge run 1                   # run a phase's deterministic gate bundle
-rigforge seal 1 --artifact docs/PHASE1.md --evidence "bootstrap complete"
-rigforge verify --require-signature
-```
-
-Wiring it into your own agent? [`examples/verify_agent_done.py`](examples/verify_agent_done.py)
-is the smallest real integration — seal a claim, tamper it, watch the signature catch the lie.
-
-## Prove it yourself — the honesty benchmark
-
-Don't take the README's word for it either. RIGForge ships a seeded, offline, reproducible
-benchmark that runs forged-proof attack scenarios (tampered artifact, forged signature,
-swapped artifact, dropped gate, unsigned tamper) and reports the **false-done-caught rate** —
-how often the signature check catches a lie that naive integrity misses:
-
-```bash
-rigforge benchmark               # real crypto, deterministic seed, byte-identical across runs
-```
-
-On the default seed it runs 16 scenarios — 8 honest, 8 forged across 5 attack classes — and
-catches **every** forged "done" while wrongly blocking **zero** honest ones:
+Real output from that example:
 
 ```
-false_done_caught_rate    1.00   (8/8 forgeries caught — 0 slipped through)
-false_pass_rate           0.00   (0/8 honest claims wrongly blocked)
-accuracy                  1.00   (16/16 verdicts correct)
+honest claim   accepted: True
+forged integrity ok: True
+forged claim   accepted: False
 ```
 
-That 100% isn't a marketing number — it's the *point*: an HMAC bound to the original artifact
-hash is cryptographically unforgeable without the key, so a tampered "done" **must** fail the
-signature check. Every figure is tallied from actual `ProofPacket.verify_signature()` verdicts,
-not hardcoded — read [`rigforge/benchmark.py`](rigforge/benchmark.py) and re-run it yourself.
-
-Want to see *why each layer matters*? The **[false-done-caught leaderboard](docs/LEADERBOARD.md)**
-scores verification strategies head-to-head — naive integrity catches **0%**, signing **67%**,
-spec-bound **100%**:
-
-```bash
-rigforge benchmark --leaderboard
-```
-
-## Works with your stack
-
-**Your agent** — RIGForge exposes its contract + proof tools over **MCP**, so Claude Code,
-Codex, Cursor, and OpenCode can seal and verify proofs directly:
-
-```bash
-rigforge mcp-serve --transport stdio          # preferred by Claude Code et al.
-rigforge mcp-serve --auth-token "$RIGFORGE_MCP_TOKEN"   # HTTP, bearer-token auth
-```
-
-### Claude Desktop stdio
-
-From the RIGForge clone, install the package with `pip install -e .` in the Python environment Claude Desktop uses. Replace the example `cwd` with the clone's path.
-
-```json
-{
-  "mcpServers": {
-    "rigforge": {
-      "command": "rigforge",
-      "args": ["mcp-serve", "--transport", "stdio"],
-      "cwd": "/path/to/rigforge"
-    }
-  }
-}
-```
-
-This launches `rigforge mcp-serve --transport stdio`.
-
-**Your observability** — RIGForge emits OpenTelemetry spans per phase and gate. Point it at
-your existing collector and traces drop into **Langfuse / Phoenix / Jaeger**. With no
-collector set, spans print as OTLP-JSON to stdout. Not installed? It's a clean no-op — the
-free core never requires it:
-
-```bash
-pip install -e ".[telemetry]"
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 rigforge trace 1
-```
-
-## Running a fleet? The swarm verdict board
-
-One agent, you can eyeball. Twenty-five, you can't. Every seal/verify lands on a per-agent
-board so you can see — provably — **which of your agents to trust and which to reject:**
-
-```bash
-rigforge verdicts          # (or open the cockpit at :8770 for the live grid)
-```
-
-```
-        RIGForge · swarm verdict board (by actor)
-┃ actor        ┃ accepted ┃ rejected ┃ trust ┃
-│ claude-code  │        5 │        1 │   83% │
-│ cursor-agent │        3 │        0 │  100% │
-│ rogue-bot    │        0 │        4 │    0% │   ← caught
-```
-
-Agents feed the board with **one MCP call** — no config, the signing key stays server-side so
-the agent can't forge its own verdict:
-
-```jsonc
-// tools/call → gev.seal_and_verify
-{ "agent": "claude-code", "name": "auth refactor", "artifacts": ["src/auth.py"] }
-// → { "accepted": true, "integrity_ok": true, "signature_ok": true, ... }
-```
-
-## Spec-bound proofs — "did the build match the spec?"
-
-Integrity proves the artifact is unchanged. **Spec-bound proofs go further: they prove the build
-satisfied the acceptance criteria of the exact spec the agent was given.** Bind a spec when you
-seal — a [spec-kit](https://github.com/github/spec-kit)-style markdown checklist or a YAML
-`criteria:` list — and:
-
-- the criteria are **signed into** the packet — a dropped or edited criterion breaks the signature;
-- verification **rejects** unless every criterion has a passing gate — *even if the artifact is intact*;
-- a swapped spec is caught by hash mismatch.
-
-```bash
-rigforge seal 1 --artifact build.out --spec spec.md
-rigforge spec-check --proof proofs/phase1_proof.json --spec spec.md
-#  ✅ spec-check: PASS   met: login works, tests pass, lint clean
-```
-
-Skip a requirement and the verdict flips — provably, not on a vibe:
-
-```
-❌ spec-check: FAIL
-   MISSING: lint clean
-```
-
-Observability shows what happened; eval scores quality; orchestration runs the fleet. Proving
-*build-matches-spec* is the part nobody else does.
-
-## Merge gate — block unsigned proofs before they land
-
-RIGForge enforces a merge gate: **no PR merges unless it carries a valid, signed
-ProofPacket.** This is not a recommendation — it's a CI enforcement point.
-
-In practice: your CI workflow runs `rigforge verify --require-signature` as a
-required check. The agent seals work before opening the PR; the gate re-verifies
-the seal on push. An unsigned or tampered proof fails the check, and the PR
-stays open.
-
-```yaml
-# .github/workflows/ci.yml — required check for PRs
-- name: Verify proof
-  run: rigforge verify --require-signature
-```
-
-The signing key stays in CI secrets — the agent never sees it, so it can't forge
-its own verdict. This is the intended deployment: seal on the agent's machine,
-verify on the CI runner, key lives nowhere the agent touches.
-
-## Public attestation — compose with Sigstore / in-toto / SLSA
-
-RIGForge's HMAC signature is **symmetric** — the same key seals and verifies.
-That means it proves integrity to *you*, but a third party can't check it without
-also getting the key (which gives them the ability to forge). If you need public
-verifiability — downstream consumers, auditors, or a public transparency log —
-compose with asymmetric attestation:
-
-| Layer | What it does | RIGForge role |
-|-------|-------------|---------------|
-| **[Sigstore](https://www.sigstore.dev/)** (`cosign`) | Keyless signing with short-lived certificates + public transparency log | RIGForge decides *what is true about the run*; Sigstore makes that decision *publicly checkable* |
-| **[in-toto](https://in-toto.io/)** | Signed attestations about supply-chain steps | RIGForge's ProofPacket is the attestation content; in-toto wraps it in a signed supply-chain layout |
-| **[SLSA](https://slsa.dev/)** | Provenance framework built on in-toto attestations | RIGForge seals the provenance; SLSA carries it through the build pipeline |
-
-A concrete example: seal a phase with RIGForge, then wrap the ProofPacket in a
-Sigstore attestation so anyone on your team can verify with `cosign verify-attestation`
-— no signing key exchange required, backed by a public transparency log.
-
-RIGForge does not do asymmetric signing or public attestation natively. It does
-the part nobody else does — *proving the run itself is untampered* — and hands
-off to a mature attestation layer for the public-verifiability half.
-
-See [`SECURITY.md`](SECURITY.md) for the full HMAC limitation and the compose
-path.
-
-## Honest scope
-
-RIGForge proves **integrity and provenance** — that an artifact is what the agent claims
-and that nothing changed it since sealing. It does **not** make your code correct or safe,
-force an agent to seal, or survive a stolen signing key. Those boundaries are stated plainly,
-not buried — full trust model and what it deliberately doesn't defend against:
-**[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md)**.
+The forged packet re-hashes a tampered artifact, so naive integrity passes and the HMAC signature fails, because the attacker has no key. The full guide (CLI reference, MCP tools for agents, spec-bound proofs, merge gate, swarm verdict board, configuration) is in [`docs/USAGE.md`](docs/USAGE.md).
 
 ## How it works
 
-Work flows through 7 explicit phases. Each phase runs a deterministic bundle of quality gates
-(pytest, ruff, schema + config validation — each timeout-guarded). Passing a phase seals a
-`ProofPacket`:
-
+```mermaid
+flowchart LR
+    A[Agent finishes work] --> B[rigforge seal]
+    B --> C[SHA-256 each artifact]
+    C --> D[HMAC-SHA256 sign the packet]
+    D --> E[(ProofPacket)]
+    E --> F{rigforge verify}
+    F -->|signature valid| G[Accepted: done is re-checkable]
+    F -->|tampered or unsigned| H[Rejected: claim fails]
 ```
-artifact ──SHA-256──▶ integrity hash ──HMAC-SHA256(signing key)──▶ signature
-                                                   │
-                          rigforge verify ─────────┘  re-checks both. Tamper either → FAIL.
-```
 
-| Phase | Name | What it gates |
-|-------|------|---------------|
-| 1 | Bootstrap & Doctrine | Repo structure, doctrine docs, hardening |
-| 2 | Environment Validation | Python, deps, config checks |
-| 3 | Runtime Kernel | Core models, schemas, registries |
-| 4 | Control Plane Registries | Agent catalog, build cards, intent maps |
-| 5 | GEV Loop + DoneContract | Contract-based verification with proof packets |
-| 6 | Archon Harness | Agent orchestration, parallel gate scheduling, budget enforcement, auto-resume |
-| 7 | Cockpit | `rigforge cockpit` — mission-control HTML view |
+Work flows through 7 phases; each runs deterministic quality gates and, on success, seals its `ProofPacket`. Design notes: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-## CLI reference
+## Project layout
+
+| Path | What lives there |
+| :-- | :-- |
+| `rigforge/` | CLI, proof layer, benchmark, gates, MCP server, cockpit web UI |
+| `contracts/` | v1 contract models and YAML schemas (done contracts, acceptance criteria) |
+| `examples/` | Runnable integrations; `rigforge/tests/test_examples.py` executes them |
+| `docs/` | Architecture, threat model, usage guide, public boundary |
+| `scripts/smoke.sh` | One-command smoke check, also run by CI |
+
+## Development
 
 ```bash
-rigforge init                    # scaffold a project
-rigforge doctor                  # diagnose env, layout, contracts, CI, lint readiness
-rigforge status                  # phase status        (--json for machine-readable)
-rigforge run N [--dry-run]       # run phase N's deterministic gate bundle
-rigforge seal N --artifact PATH [--spec FILE]      # seal a phase (optionally spec-bound)
-rigforge verify [--strict] [--require-signature]   # re-check sealed phases
-rigforge spec-check --proof P --spec S             # prove a build matched its spec
-rigforge resume                  # resume the most recent failed/unfinished phase
-rigforge benchmark               # the honesty benchmark (false-done-caught rate)
-rigforge demo                    # live tamper-detection demo
-rigforge verdicts                # swarm verdict board: per-agent accept/reject + trust%
-rigforge trace N                 # run a phase with OpenTelemetry tracing
-rigforge cockpit                 # serve the mission-control UI (127.0.0.1:8770)
-rigforge mcp-serve               # expose tools to AI agents over MCP
-rigforge contract list|create|validate|inspect
+pip install -e '.[dev]'    # the dev extra installs everything the full suite needs
+pytest -q                  # 306 passed, 0 skipped (measured 2026-10-19)
+ruff check .
 ```
 
-`--json` works everywhere it makes sense. `--cwd PATH` overrides project-root discovery.
+CI runs the suite on Python 3.10 to 3.13 with coverage, at normal and narrow terminal widths. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the workflow. Numbers on this page come from the commands above, never from estimates.
 
-## Configuration (`rigforge.yaml`)
+## Public boundary
 
-`rigforge init` scaffolds a typed config (`rigforge.config.RigForgeConfig`):
+Demo keys and fixtures only. Signing keys, customer data and private fleet credentials never leave the host. What rigforge proves and what it deliberately does not: [`docs/public-boundary.md`](docs/public-boundary.md) and [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
 
-| Section | Purpose |
-|---------|---------|
-| `budgets` | Cost / token / runtime ceilings, enforced by the harness |
-| `mcp` | MCP transport (`http`\|`stdio`), services, bearer-token auth |
-| `scheduler` | Parallel gate scheduling, agent catalog |
-| `signing` | HMAC-SHA256 ProofPacket signing + `require_on_verify` |
-| `cockpit` | Cockpit UI host/port |
+## Security
 
-Env overrides: `RIGFORGE_SIGNING_KEY[_FILE]`, `RIGFORGE_MCP_TOKEN[_FILE]`,
-`RIGFORGE_MAX_PARALLEL_GATES`. `rigforge doctor` validates the file.
-
-## Tests
-
-```bash
-pip install -e ".[dev]"
-pytest                           # 252 passing
-```
-
-The suite is adversarial by design: tamper-detection, eval-loop no-spin guarantees, gate
-timeouts, ledger concurrency, and MCP refuse-by-default are all proven with **planted
-failures** — each test fails on the broken code and passes only with the fix in place.
+HMAC signatures are symmetric, which limits who can verify. Read [`SECURITY.md`](SECURITY.md) for the limitation, the public-attestation composition path, and how to report an issue.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Built by [RIG (Rodgers Intelligence Group)](https://rodgersintelligence.com).
-
-> ⭐ If "prove it, don't trust it" is how you want your agents to work, star the repo —
-> it's the signal that keeps this free core moving.
-
+MIT, see [`LICENSE`](LICENSE).
 
 ---
 
-
-
-## Video walkthrough
-
-- Script: [`docs/video-script.md`](docs/video-script.md)
-- Recording: [`assets/demo.mp4`](assets/demo.mp4) (75s captioned)
-- Preview: [`assets/demo.gif`](assets/demo.gif)
-
-![demo preview](assets/demo.gif)
-
-## FDE bar (this studio)
-
-| Practice | Here |
-| --- | --- |
-| Employer summary | top of README |
-| Smoke proof | `bash scripts/smoke.sh` |
-| Public boundary | `docs/public-boundary.md` |
-| Claim under test | rigforge demo |
-| Fleet | [profile](https://github.com/mrodgersjs-web) · [resume](https://github.com/mrodgersjs-web/resume) · [patents](https://github.com/mrodgersjs-web/patents) |
-
-If `scripts/smoke.sh` fails, treat README claims as false until fixed.
-
-
-## Employer entry path
-
-For the shortest false-done demo, start at [`proof-studio`](https://github.com/mrodgersjs-web/proof-studio) (`bash scripts/smoke.sh`).
+<sub>Built by Mike Rodgers · [rodgersintelligence.com](https://rodgersintelligence.com)</sub>

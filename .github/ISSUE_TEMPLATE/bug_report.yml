@@ -1,0 +1,45 @@
+name: Bug report
+description: Report something that does not work as documented
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. Numbers and commands help: a report that
+        names the exact command and its output gets fixed fastest.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The behavior you saw, with the exact command and its output.
+      placeholder: |
+        rigforge verify --require-signature
+        <paste output>
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "rigforge 1.1.0 (pip show rigforge)"
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version and OS
+      placeholder: "Python 3.12 on macOS 15"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Smallest reproduction
+      description: Fewest steps or a small script that triggers the bug.

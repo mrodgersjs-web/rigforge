@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "rigforge: signed proof packets for AI coding-agent work"
+type: software
+authors:
+  - family-names: "Rodgers"
+    given-names: "Mike"
+repository-code: "https://github.com/mrodgersjs-web/rigforge"
+url: "https://rodgersintelligence.com"
+license: MIT
+version: "1.1.0"
+date-released: "2026-10-19"
+abstract: >-
+  rigforge seals the finished work of AI coding agents into HMAC-signed
+  ProofPackets: a signed record of what a build did, re-checkable with one
+  command. Ships an offline honesty benchmark that runs forged-proof attack
+  scenarios and reports the false-done-caught rate.
+keywords:
+  - verification
+  - ai-agents
+  - proof-packets
+  - tamper-evidence
+  - hmac
