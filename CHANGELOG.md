@@ -39,6 +39,7 @@ Lint repair wave (2026-10-20):
 - This commit narrows one blind except to `ValueError` and keeps the eight deliberate catch-all handlers with `# noqa` reasons (rules BLE001, S110); no behavior changes.
 - This commit asserts the specific `pydantic.ValidationError` in three contract tests and makes dict iteration and subprocess `check=False` explicit (rules B017, PLC0206, PLW1510); no behavior changes.
 - This commit clears the last seven default-set findings: a merged nested if (SIM102), a tz-aware test fixture (DTZ001), a keys-only loop (PERF102), an unused unpack renamed (RUF059), a dict literal (C408), `rigforge/cli.py` made executable for its shebang (EXE001), and one deliberate `ValueError` kept with a `# noqa` reason (TRY004).
+- This commit makes the workflow and config comments truthful: the full-default lint step's "passes it clean" claim was false (142 findings) until this repair, the test-count comment read 320 while the suite runs 325, and `pyproject.toml` called the full set advisory while CI runs it blocking.
 
 ### Added
 

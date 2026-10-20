@@ -92,16 +92,12 @@ target-version = "py310"
 line-length = 120
 
 [tool.ruff.lint]
-# What CI *enforces* (blocking). These are the correctness-class rules the
-# codebase holds clean today: the pycodestyle errors that flag real problems
-# (E4 imports, E7 statements, E9 syntax/IO errors) plus the pyflakes checks
-# that catch genuine bugs rather than style.
+# The narrow first gate CI enforces (blocking): the pycodestyle errors that
+# flag real problems (E4 imports, E7 statements, E9 syntax/IO errors) plus the
+# pyflakes checks that catch genuine bugs rather than style.
 #
-# Deliberately NOT enforced yet: import sorting (I001), unused imports (F401),
-# and the pyupgrade / flake8-* modernisation families. Against ruff's full
-# default set this codebase currently reports ~160 findings, essentially all
-# stylistic. That is a real backlog, not a hidden failure -- CI runs the full
-# set in a clearly-labelled advisory step so the number stays visible instead
-# of being masked. Adopting those rules means touching most files in the repo
-# and is a separate, reviewable change on its own.
+# The broader families (import sorting, pyupgrade, flake8-*) are not in this
+# select, but they ARE enforced: CI's second lint step runs ruff's full default
+# rule set with `--isolated`, blocking, and the codebase passes it clean
+# (0 findings) since the 2026-10-20 lint repair. Keep both steps green.
 select = ["E4", "E7", "E9", "F821", "F811", "F632", "F702"]
