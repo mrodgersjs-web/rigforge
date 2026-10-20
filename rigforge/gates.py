@@ -123,7 +123,7 @@ def gate_pytest(ctx: ProjectContext, *, quiet: bool = True) -> GateResult:
     args = ["pytest", "-q"] if quiet else ["pytest"]
     try:
         proc = subprocess.run(
-            args, cwd=str(ctx.root), capture_output=True, text=True, timeout=timeout
+            args, cwd=str(ctx.root), capture_output=True, text=True, timeout=timeout, check=False
         )
     except subprocess.TimeoutExpired:
         return GateResult(
@@ -159,6 +159,7 @@ def gate_ruff(ctx: ProjectContext) -> GateResult:
             capture_output=True,
             text=True,
             timeout=timeout,
+            check=False,
         )
     except subprocess.TimeoutExpired:
         return GateResult(

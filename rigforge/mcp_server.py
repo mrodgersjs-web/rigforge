@@ -96,12 +96,12 @@ def phase_status(phase: int | None = None) -> dict[str, Any]:
         return {"phase": phase, "sealed": False, "proof": None}
 
     results = {}
-    for p in PHASES:
+    for p, name in PHASES.items():
         proof_file = PROOF_DIR / f"phase{p}_proof.json"
         if proof_file.exists():
-            results[f"phase{p}"] = {"sealed": True, "name": PHASES[p]}
+            results[f"phase{p}"] = {"sealed": True, "name": name}
         else:
-            results[f"phase{p}"] = {"sealed": False, "name": PHASES[p]}
+            results[f"phase{p}"] = {"sealed": False, "name": name}
     return results
 
 

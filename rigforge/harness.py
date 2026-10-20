@@ -221,8 +221,7 @@ class ArchonHarness:
         results: list[GateResult | None] = [None] * len(thunks)
         with ThreadPoolExecutor(max_workers=min(parallel, len(thunks))) as pool:
             futures = {pool.submit(thunk): i for i, thunk in enumerate(thunks)}
-            for fut in futures:
-                idx = futures[fut]
+            for fut, idx in futures.items():
                 results[idx] = fut.result()
         return [r for r in results if r is not None]
 

@@ -7,6 +7,7 @@ AcceptanceCriterion, ForbiddenAction.
 from datetime import datetime
 
 import pytest
+from pydantic import ValidationError
 
 from contracts.v1.models.acceptance_criterion import (
     AcceptanceCriterion,
@@ -64,7 +65,7 @@ class TestRequiredArtifact:
         assert a.is_blocking() is False
 
     def test_invalid_name(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             RequiredArtifact(name="Bad Name!", artifact_type=ArtifactType.CODE)
 
     def test_gate_values(self):
@@ -211,11 +212,11 @@ class TestDoneContract:
         assert d["verifier_package"]["generator"] == "PyCode"
 
     def test_max_iterations_validation(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             DoneContract(studio="app", lane="X", max_iterations=0)
 
     def test_max_cost_validation(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             DoneContract(studio="app", lane="X", max_cost_usd=-1.0)
 
 
