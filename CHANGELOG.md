@@ -28,6 +28,10 @@ Polish wave (2026-10-19, same day):
   targeting `mrodgersjs-web/rigforge`; and every workflow job has
   `timeout-minutes` and no `continue-on-error`.
 
+Lint repair wave (2026-10-20):
+
+- This commit sorts the import blocks in the `contracts/` modules and tests that `ruff check --isolated` flagged as unsorted (rule I001); no behavior changes.
+
 ### Added
 
 - Tests for the intent-routing subsystem (lattice model, intent parser, lattice

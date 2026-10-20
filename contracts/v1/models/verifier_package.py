@@ -10,7 +10,9 @@ The triad enforces separation of concerns:
 """
 
 from __future__ import annotations
+
 from enum import Enum
+
 from pydantic import BaseModel, Field, field_validator
 
 

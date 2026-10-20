@@ -4,15 +4,19 @@ Validates all five models: DoneContract, VerifierPackage, RequiredArtifact,
 AcceptanceCriterion, ForbiddenAction.
 """
 
-import pytest
 from datetime import datetime
 
-from contracts.v1.models.verifier_package import VerifierPackage, AgentRole
-from contracts.v1.models.required_artifact import RequiredArtifact, ArtifactType, Gate
-from contracts.v1.models.acceptance_criterion import AcceptanceCriterion, CriterionCategory, CriterionSeverity
-from contracts.v1.models.forbidden_action import ForbiddenAction, ActionDomain
-from contracts.v1.models.done_contract import DoneContract
+import pytest
 
+from contracts.v1.models.acceptance_criterion import (
+    AcceptanceCriterion,
+    CriterionCategory,
+    CriterionSeverity,
+)
+from contracts.v1.models.done_contract import DoneContract
+from contracts.v1.models.forbidden_action import ActionDomain, ForbiddenAction
+from contracts.v1.models.required_artifact import ArtifactType, Gate, RequiredArtifact
+from contracts.v1.models.verifier_package import AgentRole, VerifierPackage
 
 # ─── VerifierPackage ───────────────────────────────────────────────────
 
@@ -219,7 +223,13 @@ class TestDoneContract:
 
 class TestPackageImport:
     def test_import_all(self):
-        from contracts.v1 import DoneContract, VerifierPackage, RequiredArtifact, AcceptanceCriterion, ForbiddenAction
+        from contracts.v1 import (
+            AcceptanceCriterion,
+            DoneContract,
+            ForbiddenAction,
+            RequiredArtifact,
+            VerifierPackage,
+        )
         assert DoneContract is not None
         assert VerifierPackage is not None
         assert RequiredArtifact is not None

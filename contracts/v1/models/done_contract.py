@@ -13,13 +13,15 @@ Hard rule: No DoneContract → no build.
 """
 
 from __future__ import annotations
+
 from datetime import datetime
+
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from contracts.v1.models.verifier_package import VerifierPackage
-from contracts.v1.models.required_artifact import RequiredArtifact
 from contracts.v1.models.acceptance_criterion import AcceptanceCriterion
 from contracts.v1.models.forbidden_action import ForbiddenAction
+from contracts.v1.models.required_artifact import RequiredArtifact
+from contracts.v1.models.verifier_package import VerifierPackage
 
 
 class DoneContract(BaseModel):
