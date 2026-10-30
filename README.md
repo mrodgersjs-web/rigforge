@@ -14,6 +14,21 @@ For teams that let AI coding agents write code. An agent's "done" becomes a sign
 
 AI coding agents are fast and confident, and they report success they did not earn. A "done" in a terminal cannot be audited: nothing behind it shows what ran, or that nothing changed afterwards. rigforge seals finished work into a `ProofPacket` (a signed record of what a build did): every artifact is hashed, the packet is HMAC-signed, and verification re-checks both. Tamper the result and the signature fails.
 
+## Wire it into Claude Desktop or any MCP host
+
+```json
+{
+  "mcpServers": {
+    "rigforge": {
+      "command": "python",
+      "args": ["-m", "rigforge.mcp_server"],
+      "env": { "GH_TOKEN": "${env:GH_TOKEN}" }
+    }
+  }
+}
+```
+
+
 ## What it proves
 
 Every row is a command you can run yourself. Results measured 2026-10-19 on a fresh `pip install -e '.[dev]'`:
